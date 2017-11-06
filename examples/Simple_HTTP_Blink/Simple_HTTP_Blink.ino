@@ -22,11 +22,11 @@
 #define SERVER_NAME "NetBlink-01"                           // host name
 #define SERVER_PORT 80                                      // host port
 
-const char* ssid     = "xxxxxxxx";
-const char* password = "xxxxxxxx";
+const char* ssid     = "xxxxxxxx";                          // repce with proper ssid
+const char* password = "xxxxxxxx";                          // repce with proper password
 
-byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // mac address
-byte server_ip4[]     = { 192, 168, 1, 60 };                // lan ip (e.g. "192.168.1.178")
+byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+byte server_ip4[]     = { 192, 168, 1, 60 };                // lan ip (e.g. "192.168.1.60")
 byte server_gateway[] = { 192, 168, 1, 1 };                 // router gateway
 byte server_subnet[]  = { 255, 255, 255, 0 };               // subnet mask
 
@@ -46,14 +46,13 @@ bool ledStatus = false;                                     // true = blinking a
 void handleBlink_GET();                                     // callback for API GET handling
 void handleBlink_PUT();                                     // callback for API PUT handling
 
-void handleBlink();                                         // callback for blinking
-
 void setup() {
   BEGIN( 9600); LF;                                         // activate Serial out
 
   PRINT( F( "# ----------------------")) LF;                // show header on server console
   PRINT( F( "# - ESP8266 HTTP Blink -")) LF;
   PRINT( F( "# ----------------------")) LF;
+  LABEL( F( "# Built-in led = "), LED)   LF;
 
 #if defined(ESP8266)                                        // ESP8266 = connect via WiFi
   WiFi.hostname( SERVER_NAME);                              // set host name
@@ -77,7 +76,7 @@ void setup() {
   server.handleOn( handleBlink_PUT, "blink", HTTP_PUT);     // set function for PUT on "blink"
 
   pinMode( LED, OUTPUT);                                    // set LED output mode
-  digitalWrite( LED, !ledStatus);              // switch led on
+  digitalWrite( LED, !ledStatus);                           // switch led on
 
   PRINT( F( "# ready for HTTP requests")) LF;
 }
