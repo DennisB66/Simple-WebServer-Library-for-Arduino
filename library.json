@@ -1,0 +1,22 @@
+{
+  "name": "Simple-WebServer-Library-for-Arduino",
+  "keywords": "web, http, api, rest",
+  "description": "Simple webServer is a small but flexible library for Arduino and ESP8266 that implements a basic HTTP server that supports straightforward API calls.",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/DennisB66/Simple-WebServer-Library-for-Arduino"
+  },
+  "authors":
+  [
+    {
+      "name": "Dennis Buis",
+      "email": "dennis.buis@gmail.com",
+      "url": "",
+      "maintainer": true
+    }
+  ],
+  "version": "0.6",
+  "frameworks": "arduino",
+  "platforms": "*"
+}
