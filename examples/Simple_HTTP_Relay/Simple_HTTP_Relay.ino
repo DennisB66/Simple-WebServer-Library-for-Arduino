@@ -61,9 +61,9 @@ int  relayPrint ( int  , bool);
 void setup() {
   BEGIN( 9600) LF;                                          // open serial communications
 
-  PRINT( F( "===========================")) LF;             // show header
-  PRINT( F( "-  Arduino Network Relay  -")) LF;
-  PRINT( F( "===========================")) LF;
+  PRINT( F( "===================")) LF;             // show header
+  PRINT( F( "-  Network Relay  -")) LF;
+  PRINT( F( "===================")) LF;
 
 #if defined(ESP8266)                                        // ESP8266 = connect via WiFi
   WiFi.hostname( SERVER_NAME);                              // set host name

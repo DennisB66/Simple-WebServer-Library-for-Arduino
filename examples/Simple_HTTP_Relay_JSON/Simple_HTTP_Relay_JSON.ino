@@ -63,9 +63,9 @@ bool Relay2Json ( int, const char*, unsigned int);
 void setup() {
   BEGIN( 9600) LF;                                          // open serial communications
 
-  PRINT( F( "==============================================")) LF;
-  PRINT( F( "-  Arduino Network Relay with JSON response  -")) LF;
-  PRINT( F( "==============================================")) LF;
+  PRINT( F( "======================================")) LF;
+  PRINT( F( "-  Network Relay with JSON response  -")) LF;
+  PRINT( F( "======================================")) LF;
 
 #if defined(ESP8266)                                        // ESP8266 = connect via WiFi
   WiFi.hostname( SERVER_NAME);                              // set host name

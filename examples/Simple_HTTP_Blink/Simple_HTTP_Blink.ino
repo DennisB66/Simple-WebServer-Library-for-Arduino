@@ -49,9 +49,9 @@ void handleBlink_PUT();                                     // callback for API 
 void setup() {
   BEGIN( 9600); LF;                                         // activate Serial out
 
-  PRINT( F( "# ----------------------")) LF;                // show header on server console
-  PRINT( F( "# - ESP8266 HTTP Blink -")) LF;
-  PRINT( F( "# ----------------------")) LF;
+  PRINT( F( "# ==============")) LF;                // show header on server console
+  PRINT( F( "# - HTTP Blink -")) LF;
+  PRINT( F( "# ==============")) LF;
   LABEL( F( "# Built-in led = "), LED)   LF;
 
 #if defined(ESP8266)                                        // ESP8266 = connect via WiFi
