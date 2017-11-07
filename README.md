@@ -23,6 +23,6 @@ arg()		        // return value of a specific argument (by index or label) of HTT
 
 ## Library Dependencies
 ```
-Simple-Utility-Library-for-Arduino	https://github.com/DennisB66/Simple-Utility-Library-for-Arduino
-ArduinoJSON				https://github.com/bblanchon/ArduinoJson (example only)
+https://github.com/DennisB66/Simple-Utility-Library-for-Arduino
+https://github.com/bblanchon/ArduinoJson (example only)
 ```
