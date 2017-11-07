@@ -21,5 +21,8 @@ argLabel() 	        // return label of n-th argument of HTTP request
 arg()		        // return value of a specific argument (by index or label) of HTTP request
 ```
 
-## Technical notes
-<to be added>
+## Library Dependencies
+```
+Simple-Utility-Library-for-Arduino	https://github.com/DennisB66/Simple-WebServer-Library-for-Arduino
+ArduinoJSON				https://github.com/bblanchon/ArduinoJson (example only)
+```
