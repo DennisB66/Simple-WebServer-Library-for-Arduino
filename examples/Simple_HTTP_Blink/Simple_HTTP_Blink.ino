@@ -48,8 +48,7 @@ void setup() {
 #if defined(ESP8266)                                        // ESP8266 = connect via WiFi
   WiFi.hostname( SERVER_NAME);                              // set host name
   WiFi.config( server_ip4, server_gateway, server_subnet);  // set fixed IP address
-  WiFi.begin();                                             // open WiFi connection (ssid/pw from EEPROM)
-//WiFi.begin( ssid, password);                              // open WiFi connection (ssid/pw into EEPROM)
+  WiFi.begin( ssid, password);                              // open WiFi connection
   while ( WiFi.status() != WL_CONNECTED) delay(500);        // wait for  connection
 
   LABEL( F( "# WiFi connected to "), ssid);
