@@ -38,7 +38,7 @@ byte server_ip4[]     = { 192, 168, 1, 60 };                // lan ip (e.g. "192
 byte server_gateway[] = { 192, 168, 1, 1 };                 // router gateway
 byte server_subnet[]  = { 255, 255, 255, 0 };               // subnet mask
 
-SimpleWebServer myServer( SERVER_PORT);                     // ardiuno  server
+SimpleWebServer server( SERVER_PORT);                       // ardiuno  server
 
 #define RELAY_COUNT  4                                      // number of available relays
 #define RELAY_ON     0                                      // status for relay = on
@@ -47,18 +47,18 @@ SimpleWebServer myServer( SERVER_PORT);                     // ardiuno  server
 #define CMD_ON  "on"                                        // command to switch relay on
 #define CMD_OFF "off"                                       // command to switch relay off
 
-byte relayPin[] = { 2, 3, 6, 7 };                           // pin configuration for relay (e.g. relay pin 0 = arduino pin 2)
+byte relayPin[] = { D2, D3, D4, D5 };                       // pin configuration for relay (e.g. relay pin 0 = arduino pin 2)
 byte relaySet[ RELAY_COUNT];                                // relay status (values indicated by RELAY_ON / RELAY_OFF)
 
 void handleRelay_GET();
 void handleRelay_PUT();
-void ConfigRelay( void);
-int  UpdateRelay( const char*);
-int  UpdateRelay( int, const char*);
-int  RelayPrint ( const char*, bool);
-int  RelayPrint ( int  , bool);
-bool Relay2Json ( const char*, const char*, unsigned int);
-bool Relay2Json ( int, const char*, unsigned int);
+void configRelay( void);
+int  updateRelay( const char*);
+int  updateRelay( int, const char*);
+int  relayPrint ( const char*, bool);
+int  relayPrint ( int, bool);
+bool relay2Json ( const char*, char*, unsigned int);
+bool relay2Json ( int        , char*, unsigned int);
 
 void setup() {
   BEGIN( 9600) LF;                                          // open serial communications
@@ -78,6 +78,7 @@ void setup() {
   PRINT( F( "#")) LF;
 #else                                                       // Arduino = connect via Ethernet
 //Ethernet.hostName( SERVER_NAME);                          // not supported (yet)
+  ETHERNET_RESET( 11U);   
   Ethernet.begin( server_mac, server_ip4, server_gateway, server_subnet);
                                                             // open ethernet connection
   LABEL( F( "# Ethernet connected to "), Ethernet.localIP()) LF;
@@ -117,19 +118,19 @@ void handleRelay_GET()
   #endif
 
   if ( idx) {
-    code = ( RelayPrint( atoi( idx), false) == 0) ? 200 : 400;
+    errorCode = ( relayPrint( atoi( idx), false) == 0) ? 200 : 400;
                                                             // show status for relay = idx
-    json =   Relay2Json( atoi( idx), content, sizeof( content));
+    json      =   relay2Json( atoi( idx), content, sizeof( content));
   } else {
-    code = ( RelayPrint(       cmd,  false) == 0) ? 200 : 400;
+    errorCode = ( relayPrint(       cmd,  false) == 0) ? 200 : 400;
                                                             // show arrays with status = cmd
-    json =   Relay2Json(       cmd, content, sizeof( content));
+    json      =   relay2Json(       cmd, content, sizeof( content));
   }
 
-  if ( json) {
-    server.response( code, "application/json", content);    // return response (headers + code + json)
+  if ( json) {                                              // return response (headers + code + json)
+    server.response( errorCode, "application/json", content);
   } else {
-    server.response( code);                                 // return response (headers + code)
+    server.response( errorCode);                            // return response (headers + code)
   }
 
 }
@@ -139,7 +140,7 @@ void handleRelay_PUT()
 {
   if (( server.pathCount() > 2) || ( server.argsCount() > 1)) return;
 
-  char  content[ 256]  = "";               // char buffer for json
+  char  content[ 256]  = "";                                // char buffer for json
   bool  json           = false;
 
   char* idx  = server.path( 1);                             // get relay id
@@ -154,77 +155,79 @@ void handleRelay_PUT()
   #endif
 
   if ( idx) {
-    UpdateRelay( atoi( idx), cmd);                            // set state = cmd for relay = idx
+    updateRelay( atoi( idx), cmd);                          // set state = cmd for relay = idx
 
-    code = ( RelayPrint( atoi( idx), cmd)  == 0) ? 200 : 400; // return status for relay = idx
-    json =   Relay2Json( atoi( idx), content, sizeof( content));
+    errorCode = ( relayPrint( atoi( idx), cmd)  == 0) ? 200 : 400;
+                                                            // return status for relay = idx
+    json      =   relay2Json( atoi( idx), content, sizeof( content));
   } else {
-    UpdateRelay( cmd);                                         // set state = cmd for all relays
+    updateRelay( cmd);                                      // set state = cmd for all relays
 
-    code = ( RelayPrint( cmd, false)        == 0) ? 200 : 400; // return status for all relays
-    json =   Relay2Json( cmd, content, sizeof( content));
+    errorCode = ( relayPrint( cmd, false)        == 0) ? 200 : 400;
+                                                            // return status for all relays
+    json      =   relay2Json( cmd, content, sizeof( content));
   }
 
-  if ( json) {
-    server.response( code, "application/json", content);         // return response (headers + code + json)
+  if ( json) {                                              // return response (headers + code + json)
+    server.response( errorCode, "application/json", content);
   } else {
-    server.response( code);                                      // return response (headers + code)
+    server.response( errorCode);                            // return response (headers + code)
   }
 
 }
 
 // initialize pins with relays inactive
-void ConfigRelay( void)
+void configRelay( void)
 {
   for (int i = 0; i < RELAY_COUNT; i++) {
-     UpdateRelay( i, CMD_OFF);                                       // 1st: set pin for relay i to low
-                                                                     // (to avoid an immediate switch on)
-     pinMode( relayPin[ i], OUTPUT);                                 // 2nd: set pin for relay i as output
+     updateRelay( i, CMD_OFF);                              // 1st: set pin for relay i to low
+                                                            // (to avoid an immediate switch on)
+     pinMode( relayPin[ i], OUTPUT);                        // 2nd: set pin for relay i as output
   }
 }
 
 // set all relays with value cmd
-int UpdateRelay( const char* cmd)
+int updateRelay( const char* cmd)
 {
   int error = 0;
 
   for( int i = 0; i < RELAY_COUNT; i++) {
-    error = UpdateRelay( i, cmd) ? 102 : error;
+    error = updateRelay( i, cmd) ? 102 : error;
   }
 
   return error;
 }
 
 // set relay idx with value cmd
-int UpdateRelay( int idx, const char* cmd)
+int updateRelay( int idx, const char* cmd)
 {
   bool valid = false;
 
-  if (( idx >= 0) & ( idx < RELAY_COUNT)) {                          // check if relay exists
+  if (( idx >= 0) & ( idx < RELAY_COUNT)) {                 // check if relay exists
     if ( strCmp( cmd, CMD_ON )) { valid = true; relaySet[ idx] = RELAY_ON;  }
     if ( strCmp( cmd, CMD_OFF)) { valid = true; relaySet[ idx] = RELAY_OFF; }
 
     if ( valid) {
-      digitalWrite( relayPin[ idx], relaySet[ idx]);                 // write cmd to relay idx
+      digitalWrite( relayPin[ idx], relaySet[ idx]);        // write cmd to relay idx
     } else {
-      ATTR( Serial, "# error: cmd not defined for relay ", idx);
-      return 102;                                                    // invalid command
+      LABEL( "# error: cmd not defined for relay ", idx);
+      return 102;                                           // invalid command
     }
   } else {
-    return 101;                                                      // invalid relay
+    return 101;                                             // invalid relay
   }
 
   return 0;
 }
 
 // print status for all relays (triggered = update)
-int RelayPrint( const char* cmd, bool triggered)
+int relayPrint( const char* cmd, bool triggered)
 {
   for( int i = 0; i < RELAY_COUNT; i++) {
     if (( cmd == NULL) ||
        ( strCmp( cmd, CMD_ON ) && ( relaySet[ i] == RELAY_ON )) ||
        ( strCmp( cmd, CMD_OFF) && ( relaySet[ i] == RELAY_OFF))) {
-      RelayPrint( i, triggered);
+      relayPrint( i, triggered);
     }
   }
 
@@ -232,57 +235,57 @@ int RelayPrint( const char* cmd, bool triggered)
 }
 
 // print status for relays idx (triggered = update)
-int RelayPrint( int idx, bool triggered)
+int relayPrint( int idx, bool triggered)
 {
-  if (( idx >= 0) & ( idx < RELAY_COUNT)) {                          // check if relay exists
-    ATTR_( Serial, F( "# relay "), idx);
-    ATTR_( Serial, F( " on pin "), relayPin[ idx]);
-    LINE_( Serial, triggered ? " switched " : " = ");
-    LINE ( Serial, relaySet[ idx] == RELAY_ON ? CMD_ON : CMD_OFF);
+  if (( idx >= 0) & ( idx < RELAY_COUNT)) {                 // check if relay exists
+    LABEL( F( "# relay "), idx);
+    LABEL( F( " on pin "), relayPin[ idx]);
+    PRINT( triggered ? F(" switched ") : F( " = "));
+    PRINT( relaySet[ idx] == RELAY_ON ? CMD_ON : CMD_OFF) LF;
 
     return 0;
   } else {
-    ATTR_( Serial, "# error: relay ", idx); LINE ( Serial, " not defined");
+    LABEL( F( "# error: relay "), idx); PRINT( F( " not defined")) LF;
     return 101;
   }
 }
 
-bool Relay2Json( const char* cmd, const char* content, unsigned int size)
+bool relay2Json( const char* cmd, char* content, unsigned int size)
 {
-  StaticJsonBuffer<200> jsonBuffer;                   // create buffer
-  JsonArray& root     = jsonBuffer.createArray();     // create array
+  StaticJsonBuffer<200> jsonBuffer;                         // create buffer
+  JsonArray& root     = jsonBuffer.createArray();           // create array
 
   for( int i = 0; i < RELAY_COUNT; i++) {
     if (( cmd == NULL) ||
        ( strCmp( cmd, CMD_ON ) && ( relaySet[ i] == RELAY_ON )) ||
        ( strCmp( cmd, CMD_OFF) && ( relaySet[ i] == RELAY_OFF))) {
-      JsonObject& item = root.createNestedObject();   // create object
+      JsonObject& item = root.createNestedObject();         // create object
 
-      item[ "relay"] = i;                             // write object
+      item[ "relay"] = i;                                   // write object
       item[ "state"] = ( relaySet[ i] == RELAY_ON ? CMD_ON : CMD_OFF);
     }
   }
 
-  root.printTo( content, size);                       // write to char buffer
+  root.printTo( content, size);                             // write to char buffer
 
-  return true;                                        // success = json created
+  return true;                                              // success = json created
 }
 
-bool Relay2Json( int idx, const char* content, unsigned int size)
+bool relay2Json( int idx, char* content, unsigned int size)
 {
-  if (( idx >= 0) & ( idx < RELAY_COUNT)) {           // check if relay exists
-    StaticJsonBuffer<200> jsonBuffer;                 // create buffer
-    JsonArray& root     = jsonBuffer.createArray();   // create array
-    JsonObject& item    = root.createNestedObject();  // create object
+  if (( idx >= 0) & ( idx < RELAY_COUNT)) {                 // check if relay exists
+    StaticJsonBuffer<200> jsonBuffer;                       // create buffer
+    JsonArray& root     = jsonBuffer.createArray();         // create array
+    JsonObject& item    = root.createNestedObject();        // create object
 
-    item[ "relay"] = idx;                             // write object
+    item[ "relay"] = idx;                                   // write object
     item[ "state"] = ( relaySet[ idx] == RELAY_ON ? CMD_ON : CMD_OFF);
 
-    root.printTo( content, size);                     // write to char buffer
-    return true;                                      // success = json created
+    root.printTo( content, size);                           // write to char buffer
+    return true;                                            // success = json created
   } else {
 
-    strcpy( content, "");                             // clear char buffer
-    return false;                                     // failure = no json
+    strcpy( content, "");                                   // clear char buffer
+    return false;                                           // failure = no json
   }
 }

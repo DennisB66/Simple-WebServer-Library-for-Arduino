@@ -11,11 +11,11 @@
 
 #include <Arduino.h>
 
-#if defined(ESP8266)
-#include <ESP8266WiFi.h>
-#else
+#if   defined(__AVR__)
 #include <SPI.h>
 #include <Ethernet.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
 #endif
 
 #include "SimpleControl.h"
@@ -56,9 +56,9 @@ public:
   bool  available();                                        // check on incoming HTTP request
   void  response( int = 200);                               // send response (code = 200 OK)
   void  response( int, const char*);                        // send response (code, content type)
-  void  response( int, const char*, const char*);           // send response (code, content type, content)
-  void  response( int, const char*, const __FlashStringHelper*);
-                                                            // send response (code, content type, FLASH content
+  void  response( int, const char*, char*);                 // send response (code, content type, content)
+  void  response( int, const char*, __FlashStringHelper*);  // send response (code, content type, FLASH content
+
   void handleOn( TaskFunc, const char*, HTTPMethod);        // attach callback function (callback, device, method)
   void handle();                                            // route incoming requests to the proper callback
 
@@ -78,12 +78,12 @@ public:
 protected:
   int             _port;                                    // port number
 
-#if defined(ESP8266)
-  WiFiServer      _server;                                  // server object (WiFi based)
-  WiFiClient      _client;                                  // client object (WiFi based)
-#else
+#if   defined(__AVR__)
   EthernetServer  _server;                                  // server object (Ethernet based)
   EthernetClient  _client;                                  // client object (Ethernet based)
+#elif defined(ESP8266)
+  WiFiServer      _server;                                  // server object (WiFi based)
+  WiFiClient      _client;                                  // client object (WiFi based)
 #endif
 
   char            _buffer[HTTP_BUFFER_SIZE];                // buffer for HTTP request

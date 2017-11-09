@@ -23,7 +23,6 @@
 
 #include "SimpleWebServer.h"
 #include "SimpleUtils.h"
-#include "SimplePrint.h"
 
 #define NO_DEBUG_MODE
 
@@ -47,7 +46,7 @@ SimpleWebServer server( SERVER_PORT);                       // ardiuno  server
 #define CMD_ON  "on"                                        // command to switch relay on
 #define CMD_OFF "off"                                       // command to switch relay off
 
-byte relayPin[] = { 2, 3, 6, 7 };                           // pin configuration for relay (e.g. relay pin 0 = arduino pin 2)
+byte relayPin[] = { D2, D3, D4, D5 };                       // pin configuration for relay (e.g. relay pin 0 = arduino pin 2)
 byte relaySet[ RELAY_COUNT];                                // relay status (values indicated by RELAY_ON / RELAY_OFF)
 
 void handleRelay_GET();
@@ -61,7 +60,7 @@ int  relayPrint ( int  , bool);
 void setup() {
   BEGIN( 9600) LF;                                          // open serial communications
 
-  PRINT( F( "===================")) LF;             // show header
+  PRINT( F( "===================")) LF;                     // show header
   PRINT( F( "-  Network Relay  -")) LF;
   PRINT( F( "===================")) LF;
 
@@ -76,6 +75,7 @@ void setup() {
   PRINT( F( "#")) LF;
 #else                                                       // Arduino = connect via Ethernet
 //Ethernet.hostName( SERVER_NAME);                          // not supported (yet)
+  ETHERNET_RESET( 11U);                                     // Leonardo ETH reset
   Ethernet.begin( server_mac, server_ip4, server_gateway, server_subnet);
                                                             // open ethernet connection
   LABEL( F( "# Ethernet connected to "), Ethernet.localIP()) LF;

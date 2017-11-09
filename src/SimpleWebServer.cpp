@@ -67,10 +67,10 @@ int SimpleWebServer::getPort()
 // check on incoming client HTTP request
 bool SimpleWebServer::available()
 {
-#if defined(ESP8266)
-  WiFiClient     client = _server.available();              // check on incoming client request
-#else
+#if   defined(__AVR__)
   EthernetClient client = _server.available();              // check on incoming client request
+#elif defined(ESP8266)
+  WiFiClient     client = _server.available();              // check on incoming client request
 #endif
 
   if ( client) {                                            // incoming client request
@@ -126,14 +126,14 @@ void SimpleWebServer::response( int code, const char* content_type)
 }
 
 // send response (code, content type, content)
-void SimpleWebServer::response( int code, const char* content_type, const char* content)
+void SimpleWebServer::response( int code, const char* content_type, char* content)
 {
   _sendHeader( code, content_type);                         // send header with response code + content type
   _sendContent( content);                                   // send content (e.g. JSON)
   _client.stop();                                           // end of client session
 }
 // send response (code, content type, FLASH content)
-void SimpleWebServer::response( int code, const char* content_type, const __FlashStringHelper* content)
+void SimpleWebServer::response( int code, const char* content_type, __FlashStringHelper* content)
 {
   _sendHeader( code, content_type);                         // send header with response code + content type
   _sendContent( content);                                   // send content (e.g. JSON)
@@ -426,7 +426,7 @@ void SimpleWebServer::_sendHeader( int code, const char* content_type)
 void SimpleWebServer::_sendContent( const char* content)
 {
   if ( _client.connected()) {                               // if client session still active
-    _client.print( content);                                // send content
+    _client.println( content);                              // send content
   }
 }
 
@@ -434,6 +434,6 @@ void SimpleWebServer::_sendContent( const char* content)
 void SimpleWebServer::_sendContent( const __FlashStringHelper* content)
 {
   if ( _client.connected()) {                               // if client session still active
-    _client.print( content);                                // send content
+    _client.println( content);                              // send content
   }
 }
