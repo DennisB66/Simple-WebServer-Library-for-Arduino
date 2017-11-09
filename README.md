@@ -2,7 +2,7 @@
 
 Simple webServer is a small but flexible library for Arduino and ESP8266 that implements a basic HTTP server that supports straightforward API calls.
 
-The primary goal was to create a Arduino sketch that can switch a number of relays to activate garden lights via wired ethernet. The example sketches shows how the library can be applied and demonstrates the use of an API based Arduino with an Ethernet shield or ESP8266 connected to a 4 relay board (Simple_HTTP_Relay), including an extension with JSON based responses (Simple_HTTP_Relay_JSON, requires the ArduinoJSON library - https://github.com/bblanchon/ArduinoJson). A more basic example (Simple_HTTP_Blink) is also included that activates the built-in led over HTTP.
+The primary goal was to create a Arduino sketch that can switch a number of relays to activate garden lights via wired ethernet. The example sketches shows how the library can be applied and demonstrates the use of an API based Arduino with an Ethernet shield or ESP8266 connected to a 4 relay board (Simple_HTTP_Relay), including an extension with JSON based responses (Simple_HTTP_Relay_JSON, requires the ArduinoJSON library). A more basic example (Simple_HTTP_Blink) is also included that activates the built-in led over HTTP.
 
 ## Functionality
 The functions in the class SimpleWebServer include:
@@ -22,7 +22,7 @@ arg()		        // return value of a specific argument (by index or label) of HTT
 ```
 
 ## Library Dependencies
-```
-Simple-Utility-Library-for-Arduino	https://github.com/DennisB66/Simple-Utility-Library-for-Arduino
-ArduinoJSON				https://github.com/bblanchon/ArduinoJson (example only)
-```
+
+- https://github.com/DennisB66/Simple-Utility-Library-for-Arduino
+- https://github.com/bblanchon/ArduinoJson (example only)
+
