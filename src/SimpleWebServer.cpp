@@ -115,28 +115,32 @@ bool SimpleWebServer::available()
 void SimpleWebServer::response( int code)
 {
   _sendHeader( code);                                       // send header with response code
+  _client.flush();
   _client.stop();                                           // end of client session
 }
 
 // send response (code, content type)
 void SimpleWebServer::response( int code, const char* content_type)
 {
-  _sendHeader( code, content_type);                         // send header with response code + content type
+  _sendHeader( code, 0, content_type);                      // send header with response code + content type
+  _client.flush();
   _client.stop();                                           // end of client session
 }
 
 // send response (code, content type, content)
 void SimpleWebServer::response( int code, const char* content_type, char* content)
 {
-  _sendHeader( code, content_type);                         // send header with response code + content type
+  _sendHeader( code, strlen( content) + 1, content_type);   // send header with response code + content type
   _sendContent( content);                                   // send content (e.g. JSON)
+  _client.flush();
   _client.stop();                                           // end of client session
 }
 // send response (code, content type, FLASH content)
 void SimpleWebServer::response( int code, const char* content_type, __FlashStringHelper* content)
 {
-  _sendHeader( code, content_type);                         // send header with response code + content type
+  _sendHeader( code, 0, content_type);                      // send header with response code + content type
   _sendContent( content);                                   // send content (e.g. JSON)
+  _client.flush();
   _client.stop();                                           // terminate client session
 }
 
@@ -400,25 +404,40 @@ void SimpleWebServer::_parseArgs()
   #endif
 }
 
+#if defined(SIMPLEWEBSERVER_DEBUG)
+#define CPRINT(S) _client.print(S); PRINT(S);
+#else
+#define CPRINT(S) _client.print(S);
+#endif
+
 // send response to client (code, content type)
-void SimpleWebServer::_sendHeader( int code, const char* content_type)
+void SimpleWebServer::_sendHeader( int code, size_t size, const char* content_type)
 {
   if ( _client.connected()) {                               // if client session still active
-    _client.print  ( F( "HTTP/1.1 "));                      // send return code
-    _client.print  ( code);
-    _client.print  ( " "             );
-    _client.println( HTTP_CodeMessage( code));
+    CPRINT( F( "HTTP/1.1 "));                               // send return code
+    CPRINT( code);
+    CPRINT( " " );
+    CPRINT( HTTP_CodeMessage( code));
+    CPRINT( "\r\n");
 
-  //_client.print  ( "Host"          ); _client.print( Ethernet.getHostName();
+  //CPRINT( "Host"); CPRINT( Ethernet.getHostName();
 
-    _client.print  ( F( "User-Agent: "  ));                 // send additional headers
-    _client.println( F( "Arduino-ethernet"));
+    CPRINT( F( "User-Agent: "));                            // send additional headers
+    CPRINT( F( "Arduino-ethernet"));
+    CPRINT( "\r\n");
 
-    _client.print  ( F( "Content-Type: "));
-    _client.println( content_type ? content_type : "text/html");
+    CPRINT( F( "Content-Length: "));
+    CPRINT( size);
+    CPRINT( "\r\n");
 
-    _client.print  ( F( "Connection: "  ));
-    _client.println( F( "close"));
+    CPRINT( F( "Content-Type: "));
+    CPRINT( content_type ? content_type : "text/html");
+    CPRINT( "\r\n");
+
+    CPRINT( F( "Connection: "));
+    CPRINT( F( "close"));
+    CPRINT( "\r\n");
+    CPRINT( "\r\n");
   }
 }
 
@@ -426,7 +445,8 @@ void SimpleWebServer::_sendHeader( int code, const char* content_type)
 void SimpleWebServer::_sendContent( const char* content)
 {
   if ( _client.connected()) {                               // if client session still active
-    _client.println( content);                              // send content
+    CPRINT( content);                                       // send content
+    CPRINT( "\r\n");
   }
 }
 
@@ -434,6 +454,7 @@ void SimpleWebServer::_sendContent( const char* content)
 void SimpleWebServer::_sendContent( const __FlashStringHelper* content)
 {
   if ( _client.connected()) {                               // if client session still active
-    _client.println( content);                              // send content
+    CPRINT( content);                                       // send content
+    CPRINT( "\r\n");
   }
 }

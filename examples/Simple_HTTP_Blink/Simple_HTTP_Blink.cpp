@@ -20,11 +20,11 @@
 #define SERVER_NAME "NetBlink-01"                           // host name
 #define SERVER_PORT 80                                      // host port
 
-const char* ssid     = "xxxxxxxx";                          // repce with proper ssid
-const char* password = "xxxxxxxx";                          // repce with proper password
+const char* ssid     = "Kajtus06";                          // repce with proper ssid
+const char* password = "Polska06";                          // repce with proper password
 
-byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-byte server_ip4[]     = { 192, 168, 1, 60 };                // lan ip (e.g. "192.168.1.60")
+byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
+byte server_ip4[]     = { 192, 168, 1, 69 };                // lan ip (e.g. "192.168.1.60")
 byte server_gateway[] = { 192, 168, 1, 1 };                 // router gateway
 byte server_subnet[]  = { 255, 255, 255, 0 };               // subnet mask
 
@@ -39,7 +39,7 @@ void handleBlink_GET();                                     // callback for API 
 void handleBlink_PUT();                                     // callback for API PUT handling
 
 void setup() {
-  BEGIN( 9600) LF;                                             // activate Serial out
+  BEGIN( 115200) LF;                                             // activate Serial out
   PRINT( F( "# ================")) LF;                        // show header on server console
   PRINT( F( "# -  HTTP Blink  -")) LF;
   PRINT( F( "# ================")) LF;
@@ -91,11 +91,11 @@ void handleBlink_GET()
   pinMode( LED_BUILTIN, INPUT);                             // set LED output mode
 
   if ( ledStatus != digitalRead( LED_BUILTIN)) {
-    server.response( errorCode = 200, "text/plain", F( "Led = on\n" ));
+    server.response( errorCode = 200, "text/plain", "Led = on\n" );
                                                             // response to client
     PRINT( F( "# Led = on" )) LF;                           // response to console
   } else {
-    server.response( errorCode = 200, "text/plain", F( "Led = off\n"));
+    server.response( errorCode = 200, "text/plain", "Led = off\n");
                                                             // response to client
     PRINT( F( "# Led = off")) LF;                           // response to server console
   }
@@ -118,14 +118,14 @@ void handleBlink_PUT()
 
   if ( strcmp( cmd, LED_ON) == 0) {
     digitalWrite( LED_BUILTIN, !ledStatus);                 // switch led on
-    server.response( errorCode = 200, "text/plain", F( "Led switched on\n"));
+    server.response( errorCode = 200, "text/plain", "Led switched on");
                                                             // respond to client
     PRINT( F( "# Led switched on")) LF;                     // respond to server console
   }
 
   if ( strcmp( cmd, LED_OFF) == 0) {
     digitalWrite( LED_BUILTIN,  ledStatus);                 // switch led off
-    server.response( errorCode = 200, "text/plain", F( "Led switched off\n"));
+    server.response( errorCode = 200, "text/plain", "Led switched off");
                                                             // respond to client
     PRINT( F( "# Led switched off")) LF;                    // respond to server console
   }

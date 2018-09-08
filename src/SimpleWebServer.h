@@ -55,7 +55,7 @@ public:
 
   bool  available();                                        // check on incoming HTTP request
   void  response( int = 200);                               // send response (code = 200 OK)
-  void  response( int, const char*);                        // send response (code, content type)
+  void  response( int, const char*);                // send response (code, content type)
   void  response( int, const char*, char*);                 // send response (code, content type, content)
   void  response( int, const char*, __FlashStringHelper*);  // send response (code, content type, FLASH content
 
@@ -110,7 +110,7 @@ protected:
   void _parsePath();                                        // parse HTTP request path
   void _parseArgs();                                        // parse HTTP request args
 
-  void _sendHeader( int, const char* = NULL);               // send response (code, content type)
+  void _sendHeader( int, size_t = 0, const char* = NULL);   // send response (code, content type)
   void _sendContent( const char*);                          // send content (content)
   void _sendContent( const __FlashStringHelper*);           // send content (FLASH content)
 };
