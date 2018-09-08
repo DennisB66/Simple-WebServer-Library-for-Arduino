@@ -16,7 +16,7 @@
       "maintainer": true
     }
   ],
-  "version": "0.61",
+  "version": "0.62",
   "frameworks": "arduino",
   "platforms": "*"
 }
