@@ -26,3 +26,8 @@ arg()		        // return value of a specific argument (by index or label) of HTT
 
 - https://github.com/DennisB66/Simple-Utility-Library-for-Arduino
 - https://github.com/bblanchon/ArduinoJson (example only)
+
+Version history:
+```
+0.7			// improved design & coding
+```
