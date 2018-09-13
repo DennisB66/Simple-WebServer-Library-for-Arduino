@@ -9,7 +9,8 @@ The functions in the class SimpleWebServer include:
 ```
 begin()			// start server session
 getPort			// return active port number
-available()		// check on incoming HTTP request from client
+connect()		// check on incoming connection (HTTP request from client)
+connect()		// close connection (with client)
 response()	        // send response to client
 handleOn()		// attach callback function
 handle()		// route HTTP request to proper callback function
@@ -25,4 +26,3 @@ arg()		        // return value of a specific argument (by index or label) of HTT
 
 - https://github.com/DennisB66/Simple-Utility-Library-for-Arduino
 - https://github.com/bblanchon/ArduinoJson (example only)
-
