@@ -11,7 +11,7 @@ begin()			// start server session
 getPort			// return active port number
 connect()		// open connection (incoming HTTP request from client)
 disconnect()		// close connection (with client)
-response()	        // send response to client
+response()	        // send response (to client)
 handleOn()		// attach callback function
 handle()		// route HTTP request to proper callback function
 getRequest()		// return pending HTTP request
