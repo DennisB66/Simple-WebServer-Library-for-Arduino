@@ -8,14 +8,14 @@ The primary goal was to create a Arduino sketch that can switch a number of rela
 The functions in the class SimpleWebServer include:
 ```
 begin()			// start server session
-getPort			// return active port number
+port			// return active port number
 connect()		// open connection (incoming HTTP request from client)
 disconnect()		// close connection (with client)
 response()	        // send response (to client)
 handleOn()		// attach callback function
 handle()		// route HTTP request to proper callback function
-getRequest()		// return pending HTTP request
-getMethod()	        // return pending HTTP method
+request()		// return pending HTTP request
+method()	        // return pending HTTP method
 path()                  // return a specific path item of HTTP request
 argCount()              // return number of (recognized) arguments of HTTP request
 argLabel() 	        // return label of n-th argument of HTTP request
