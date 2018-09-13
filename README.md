@@ -10,7 +10,7 @@ The functions in the class SimpleWebServer include:
 begin()			// start server session
 getPort			// return active port number
 connect()		// check on incoming connection (HTTP request from client)
-connect()		// close connection (with client)
+disconnect()		// close connection (with client)
 response()	        // send response to client
 handleOn()		// attach callback function
 handle()		// route HTTP request to proper callback function
