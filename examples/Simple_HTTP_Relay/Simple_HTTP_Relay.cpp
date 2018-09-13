@@ -27,8 +27,8 @@
 #define SERVER_NAME "NetRelay-01"                           // host name
 #define SERVER_PORT 80                                      // host port
 
-const char* ssid     = "Kajtus06";                          // replace with proper ssid
-const char* password = "Polska06";                          // replace with proper password
+const char* ssid     = "xxxxxxxx";                          // replace with proper ssid
+const char* password = "xxxxxxxx";                          // replace with proper password
 
 byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // mac address
 byte server_ip4[]     = { 192, 168, 1, 60 };                // lan ip (e.g. "192.168.1.60")

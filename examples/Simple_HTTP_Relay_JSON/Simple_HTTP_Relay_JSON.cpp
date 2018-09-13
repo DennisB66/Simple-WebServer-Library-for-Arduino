@@ -28,8 +28,8 @@
 #define SERVER_NAME "NetRelay-01"                           // host name
 #define SERVER_PORT 80                                      // host port
 
-const char* ssid     = "Kajtus06";                          // replace with proper ssid
-const char* password = "Polska06";                          // replace with proper password
+const char* ssid     = "xxxxxxxx";                          // replace with proper ssid
+const char* password = "xxxxxxxx";                          // replace with proper password
 
 byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // mac address
 byte server_ip4[]     = { 192, 168, 1, 60 };                // lan ip (e.g. "192.168.1.60")
@@ -58,7 +58,7 @@ bool relay2Json ( char*, unsigned int, int);
 bool relay2Json ( char*, unsigned int, int, int);
 
 void setup() {
-  BEGIN( 115200) LF;                                          // open serial communications
+  BEGIN( 115200) LF;                                        // open serial communications
 
   PRINT( F( "===================")) LF;                     // show header
   PRINT( F( "-  Network Relay  -")) LF;
@@ -164,13 +164,13 @@ void updateRelay( int state)
 // set relay idx with value cmd
 void updateRelay( int i, int state)
 {
-  if (( i >= 0) && ( i < RELAY_COUNT)) {                       // check if relay exists
-    digitalWrite( relayPin[ i], relaySet[ i] = state);        // write cmd to relay idx
+  if (( i >= 0) && ( i < RELAY_COUNT)) {                    // check if relay exists
+    digitalWrite( relayPin[ i], relaySet[ i] = state);      // write cmd to relay idx
   }
 }
 
 
-// print status for all relays
+// generate JSON for all relays
 bool relay2Json( char* content, unsigned int size, int state)
 {
   StaticJsonBuffer<200> jsonBuffer;                         // create buffer
@@ -189,7 +189,7 @@ bool relay2Json( char* content, unsigned int size, int state)
   return true;                                              // success = json created
 }
 
-// print status for relay item i
+// generate JSON for relay item i
 bool relay2Json( char* content, unsigned int size, int i, int state)
 {
   if (( i >= 0) & ( i < RELAY_COUNT)) {                     // check if relay exists
