@@ -10,8 +10,20 @@
 #include "SimpleWebServer.h"
 #include "SimpleUtils.h"
 
-int errorCode = 400;
+#define SERVER_METH_READ  0                                 // state engine values
+#define SERVER_METH_DONE  1
+#define SERVER_PATH_INIT  2
+#define SERVER_PATH_READ  3
+#define SERVER_ARGS_INIT  4
+#define SERVER_ARGS_READ  5
+#define SERVER_ARGS_NEXT  6
+#define SERVER_HTTP_INIT  7
+#define SERVER_HTTP_READ  8
+#define HTTP_REQUEST_ERR  9
 
+int returnCode = 400;                                       // HTTP response code (default = ERROR)
+
+// create Webserver task (for a specfic method)
 SimpleWebServerTask::SimpleWebServerTask( TaskFunc func, const char* device, HTTPMethod method)
 : SimpleTask( func)
 , _device( NULL)
@@ -23,6 +35,7 @@ SimpleWebServerTask::SimpleWebServerTask( TaskFunc func, const char* device, HTT
   }
 }
 
+// remove Webserver task
 SimpleWebServerTask::~SimpleWebServerTask()
 {
   if ( _device) free( _device);                             // destroy device string
@@ -40,15 +53,11 @@ HTTPMethod SimpleWebServerTask::method()
   return _method;
 }
 
-// create server instance (port = 80)
+// create server instance (default port = 80)
 SimpleWebServer::SimpleWebServer( int port)
 : SimpleTaskList()
 , _port  ( port)
 , _server( port)
-, _pathCount( 0)
-, _argsCount( 0)
-, _pathList ( 0)
-, _argsList ( 0)
 {
 }
 
@@ -59,89 +68,77 @@ void SimpleWebServer::begin()
 }
 
 // return server port number
-int SimpleWebServer::getPort()
+int SimpleWebServer::port()
 {
-  return _port;                                            // return server port number
+  return _port;                                             // return server port number
 }
 
-// check on incoming client HTTP request
-bool SimpleWebServer::available()
+// check on incoming connection (true = HTTP request received)
+bool SimpleWebServer::connect()
 {
-#if   defined(__AVR__)
-  EthernetClient client = _server.available();              // check on incoming client request
-#elif defined(ESP8266)
-  WiFiClient     client = _server.available();              // check on incoming client request
-#endif
+  _client = _server.available();
 
-  if ( client) {                                            // incoming client request
-    memset( _buffer, 0, HTTP_BUFFER_SIZE);                  // clear buffer
+  if ( _client) {                                           // incoming client request
+    int i = 0;                                              // reset buffer
 
-    int i = 0;                                              // read counter
-    while ( client.connected()) {                           // check on active client session
-      if ( client.available()) {                            // check on available client data
-        char c = client.read();                             // read client data (char by char)
+    while ( _client.connected()) {                          // check on active client session
+      if ( _client.available()) {                           // check on available client data
+        char c = _client.read();                            // read client data (char by char)
 
-        if (( c == '\r') || ( c == '\n')) {                 // check on end of HTTP request
+        if (( c == '\r') || (c == '\n')) {                  // check on end of HTTP request
           break;                                            // HTTP request complete
         }
 
-        if ( i < HTTP_BUFFER_SIZE - 1) {                    // check on buffer overrun (safeguard terminator)
-          _buffer[i++] = c;                                 // store incoming data into buffer
-        }
+        _buffer[i++] = c;                                   // add char to buffer
       }
-      _client = client;                                     // retain client session
     }
 
-    #ifdef DEBUG_SIMPLE_WEBSERVER                           // print results if debugging
-    PRINT( F( "> ")); PRINT( _buffer) LF;                   // print full HTTP request including \n"
-    #endif
+#ifdef SIMPLEWEBSERVER_DEBUG
+    VALUE( _buffer) LF;                                     // print full HTTP request"
+#endif
 
-    _parseRequest();                                        // extract http path + args
-    _parsePath();                                           // http path items into path array
-    _parseArgs();                                           // http args items into args array
-
-    if ( strlen( _pathList[0]) == 0) {                      // if path = empty
-      response( HTTP_OK);                                   // respond on HTTP Identify request
-      return false;                                         // failure: no further processing required
+    if ( _parseRequest()) {                                 // breakdown HTTP request
+      if (( _pathCount) || ( _argsCount)) {                 // HTTP request
+        return true;
+      } else {
+        response( HTTP_OK);                                 // HTTP identify
+      }
     } else {
-      return true;                                          // success: ready for further processing
+      response( 400);                                       // HTTP error
     }
   }
 
-  return false;                                             // failure: no HTTP request available
+  return false;                                             // success: ready for further processing
+}
+
+void SimpleWebServer::disconnect()
+{
+  if ( _client.connected()) { delay(10); _client.stop(); }  // terminate client session if still open
 }
 
 // send response (code = 200 OK)
 void SimpleWebServer::response( int code)
 {
   _sendHeader( code);                                       // send header with response code
-  _client.flush();
-  _client.stop();                                           // end of client session
 }
 
 // send response (code, content type)
 void SimpleWebServer::response( int code, const char* content_type)
 {
   _sendHeader( code, 0, content_type);                      // send header with response code + content type
-  _client.flush();
-  _client.stop();                                           // end of client session
 }
 
 // send response (code, content type, content)
-void SimpleWebServer::response( int code, const char* content_type, char* content)
+void SimpleWebServer::response( int code, const char* content_type, const char* content)
 {
-  _sendHeader( code, strlen( content) + 1, content_type);   // send header with response code + content type
+  _sendHeader( code, strlen( content) + 2, content_type);   // send header with response code + content type
   _sendContent( content);                                   // send content (e.g. JSON)
-  _client.flush();
-  _client.stop();                                           // end of client session
 }
 // send response (code, content type, FLASH content)
 void SimpleWebServer::response( int code, const char* content_type, __FlashStringHelper* content)
 {
   _sendHeader( code, 0, content_type);                      // send header with response code + content type
   _sendContent( content);                                   // send content (e.g. JSON)
-  _client.flush();
-  _client.stop();                                           // terminate client session
 }
 
 // attach callback function (callback, device, method)
@@ -152,27 +149,28 @@ void  SimpleWebServer::handleOn( TaskFunc func, const char* name, HTTPMethod met
   _attach( task);                                           // attach task to list
 }
 
-// route incoming requests to the proper callback
+// route incoming requests to the proper callback function
 void SimpleWebServer::handle()
 {
   SimpleWebServerTask* task = (SimpleWebServerTask*) _rootTask;
                                                             // start with first task
-  TaskFunc             func;                                // last callback function
+  TaskFunc             func;                                // active callback function
 
-  errorCode = 400;                                          // default return code = error
+  returnCode = 400;                                         // default return code = error
 
-  if ( available()) {                                       // request available from client
+  if ( connect()) {                                         // request available from client
     while ( task != NULL) {                                 // if list contains tasks
       func = task->func();                                  // get callback function
       if ( method( task->method()) && path( 0, task->device())) {
                                                             // check targeted method & targeted device
-        ( *func)();                                         // execute callback function
+        (*func)();                                          // execute callback function
       }
 
       task = (SimpleWebServerTask*) task->next();           // goto next task
     }
 
-    response( errorCode);                                   // respond to client
+  response( returnCode);
+  disconnect();                                             // end of client session
   }
 }
 
@@ -201,15 +199,15 @@ int SimpleWebServer::pathCount()
 }
 
 // returns value of HTTP path at index i
-char* SimpleWebServer::path( int i)
+const char* SimpleWebServer::path( uint8_t i)
 {
-  return (( i >= 0) && ( i < _pathCount)) ? _pathList[ i] : NULL;
+  return ( i < _pathCount) ? _path[ i] : NULL;
 }                                                           // return path item at index i
 
 // checks if pathItem exists at index i
-bool SimpleWebServer::path( int i, const char* pathItem)
+bool SimpleWebServer::path( uint8_t i, const char* pathItem)
 {
-  return (( i >= 0) && ( i < _pathCount)) ? strCmp( pathItem, _pathList[ i]) : false;
+  return ( i < _pathCount) ? strCmp( pathItem, _path[ i]) : false;
 }                                                           // return true if pathItem exists
 
 // return number of (recognized) arguments
@@ -218,226 +216,153 @@ int SimpleWebServer::argsCount()
   return _argsCount;                                        // return number of items in args array
 }
 
-// return label of n-th (recognized) argument
-char* SimpleWebServer::argLabel( int i)
-{
-  return (( i >= 0) && ( i < _argsCount)) ? _argsList[ i].label : NULL;
-}                                                           // return label of argument at index i
-
-// return value of n-th (recognized) argument
-char* SimpleWebServer::arg( int i)
-{
-  return (( i >= 0) && ( i < _argsCount)) ? _argsList[i].value : NULL;
-}                                                           // return value of argument at index i
-
-// checks if argmument value exists at index i
-bool SimpleWebServer::arg( int i, const char* value)
-{
-  return (( i >= 0) && ( i < _argsCount)) ? strCmp( value, _argsList[i].value) : false;
-}                                                           // return true if value exists at index i
-
 // return value of argument with a specfic label
-char* SimpleWebServer::arg( const char* name)
+const char* SimpleWebServer::arg( const char* label)
 {
   for ( int i = 0; i < _argsCount; i++) {                   // for all args items
-    if ( strCmp( _argsList[ i].label, name)) {              // if name exists
-      return _argsList[ i].value ?  _argsList[ i].value : _argsList[ i].label;
-                                                            // return value at index i
-    }
+    if ( strCmp( _args[ i].label, label)) {                 // if label exists
+      return _args[ i].value ?  _args[ i].value : _args[ i].label;
+    }                                                      // return value at index i
   }
 
   return NULL;
 }
 
 // return true if value of argument with a specfic label exists
-bool SimpleWebServer::arg( const char* name, const char* value)
+bool SimpleWebServer::arg( const char* label, const char* value)
 {
+  bool found = false;
+
   for ( int i = 0; i < _argsCount; i++) {                   // for all args items
-    if ( strCmp( _argsList[ i].label, name)) {              // if name exists
-      return strCmp( _argsList[ i].value, value);           // return true if value exists at index i
+    found |= (( strCmp( _args[i].label, label)) &&
+              ( strCmp( _args[i].value, value)));           // return true if value exists at index i
+  }
+
+  return found;
+}
+
+// break down HTTP request (e.g. "GET /path/1?arg1=0&arg2=1 HTTP/1.1")
+bool SimpleWebServer::_parseRequest()
+{
+  char* meth = _buffer;                                     // HTTP method  string
+  char* http = _buffer;                                     // HTTP version string
+  int   mode = SERVER_METH_READ;                            // state engine value
+  int   leng = strlen( _buffer);                            // length of HTTP request
+  bool  _ok_ = true;
+
+  _pathCount = 0;                                           // reset number of path items
+  _argsCount = 0;                                           // reset number of argument items
+
+  for ( int i = 0; i < leng; i++) {                         // buffer loop
+    switch ( mode) {
+      case SERVER_METH_READ :                               // read HTTP _method
+      if ( _buffer[i] == ' ') { _buffer[i] = 0; mode = SERVER_METH_DONE; }
+      break;
+
+      case SERVER_METH_DONE :                               // prep for first path item
+      if ( _buffer[i] == '/') { _buffer[i] = 0; mode = SERVER_PATH_INIT; }
+      break;
+
+      case SERVER_PATH_INIT :                               // init next part item
+      if ( _buffer[i] == ' ') { _buffer[i] = 0; mode = HTTP_BAD_REQUEST; break; }
+      _path[ _pathCount++] = _buffer + i;
+      mode = SERVER_PATH_READ;                              // no break = include current char in path read
+
+      case SERVER_PATH_READ :                               // read next path item
+      if ( _buffer[i] == '/') { _buffer[i] = 0; mode = SERVER_PATH_INIT; }
+      if ( _buffer[i] == '?') { _buffer[i] = 0; mode = SERVER_ARGS_INIT; }
+      if ( _buffer[i] == ' ') { _buffer[i] = 0; mode = SERVER_HTTP_INIT; }
+      break;
+
+      case SERVER_ARGS_INIT :                               // init next args label
+      if ( _buffer[i] == ' ') { _buffer[i] = 0; mode = HTTP_BAD_REQUEST; break; }
+      _args[ _argsCount++  ].label = _buffer + i;
+      mode = SERVER_ARGS_READ;                              // no break = include current char in args read
+
+      case SERVER_ARGS_READ :                               // read nest args label
+      if ( _buffer[i] == '=') { _buffer[i] = 0; mode = SERVER_ARGS_NEXT; }
+      if ( _buffer[i] == '&') { _buffer[i] = 0; mode = SERVER_ARGS_INIT; }
+      if ( _buffer[i] == ' ') { _buffer[i] = 0; mode = SERVER_HTTP_INIT; }
+      break;
+
+      case SERVER_ARGS_NEXT :                               // read next args value
+      _args[ _argsCount - 1].value = _buffer + i;
+      mode = SERVER_ARGS_READ;
+      break;
+
+      case SERVER_HTTP_INIT :                               // init HTTP version
+      http = _buffer + i;
+      mode = SERVER_HTTP_READ;                              // no break = include current char in version read
+
+      case SERVER_HTTP_READ :                               // read HTTP version
+      if ( _buffer[i] == '\r') { _buffer[i] = 0; }
+      break;
+
+      case HTTP_BAD_REQUEST :                               //
+      break;
     }
+
+    mode = (( _pathCount < MAX_PATHCOUNT) &&
+            ( _argsCount < MAX_ARGSCOUNT)) ? mode : HTTP_BAD_REQUEST;
   }
 
-  return false;
-}
+  _header = true;
+  _method = HTTP_ANY;                                       // determine method index
+  if ( strCmp( meth, "GET"    )) { _method = HTTP_GET;     } else
+  if ( strCmp( meth, "POST"   )) { _method = HTTP_POST;    } else
+  if ( strCmp( meth, "DELETE" )) { _method = HTTP_DELETE;  } else
+  if ( strCmp( meth, "OPTIONS")) { _method = HTTP_OPTIONS; } else
+  if ( strCmp( meth, "PUT"    )) { _method = HTTP_PUT;     } else
+  if ( strCmp( meth, "PATCH"  )) { _method = HTTP_PATCH;   }
+  _version = http + 5;                                      // strClr( vers_s + 5);
 
-// stop  client session
-void SimpleWebServer::_clientStop()
-{
-  if ( _client.connected()) _client.stop();                 // terminate client session if still open
-}
+  #ifdef SIMPLEWEBSERVER_DEBUG
+  VALUE( _method); VALUE( _version) LF;
 
-// parse HTTP request into path & args
-void SimpleWebServer::_parseRequest()
-{                                                           // "GET /path?arg=0 HTTP/1.1"
-  char* meth_e = strchr( _buffer, ' ');                     //  ^ end of method
-  char* path_s = strchr( _buffer, '/');                     //      ^ start of path
-  char* path_e = strchr( path_s + 1 , ' ');                 //                 ^ end of path
-  char* args_s = strchr( path_s + 1 , '?');                 //           ^ start of args
-  char* vers_s = strstr( path_e + 1 , "HTTP/");             //                  ^ start of version
-
-  if (( path_s == 0) || ( path_e == 0) || ( vers_s == 0)) {
-    return;                                                 // failure: no valid HTTP request
-  }
-
-  if ( args_s) {
-    _path = path_s; _args = args_s; strClr( path_e);        // set path + set args
-  } else {
-    _path = path_s; _args = path_e; strClr( path_e);        // set path + set args to empty string
-  }
-
-  _version = vers_s + 5; //strClr( vers_s + 8);
-  _method  = HTTP_ANY;   strClr( meth_e);                   // determine method index
-  if ( strCmp( _buffer, "GET"    )) { _method = HTTP_GET;     } else
-  if ( strCmp( _buffer, "POST"   )) { _method = HTTP_POST;    } else
-  if ( strCmp( _buffer, "DELETE" )) { _method = HTTP_DELETE;  } else
-  if ( strCmp( _buffer, "OPTIONS")) { _method = HTTP_OPTIONS; } else
-  if ( strCmp( _buffer, "PUT"    )) { _method = HTTP_PUT;     } else
-  if ( strCmp( _buffer, "PATCH"  )) { _method = HTTP_PATCH;   }
-
-  #ifdef DEBUG_SIMPLE_WEBSERVER
-  VALUE( F( "> method "), _buffer ) LF;
-  VALUE( F( "> version"), _version) LF;
-  VALUE( F( "> path"   ), _path ? _path : "NULL\r\n") LF;
-  VALUE( F( "> args"   ), _args ? _args : "NULL\r\n") LF;
-  #endif
-}
-
-// parse HTTP request path
-void SimpleWebServer::_parsePath()
-{
-  if ( _pathList) delete[] _pathList;                       // destroy argument array
-  _pathSize  = strlen( _path);                              // determine path length (incl. args)
-  _pathList  = 0;                                           // reset path item array
-  _pathCount = 0;                                           // reset path item counter
-
-  for ( int i = 0; i < _pathSize; i++) {                    // for complete path string
-    _pathCount += ( _path[i] == '/');                       // count path items starting with '/')
-  }
-
-  #ifdef DEBUG_SIMPLE_WEBSERVER
-  LABEL( F( "> pathCount = "), _pathCount) LF;
-  #endif
-
-  if ( _pathCount == 0) return;                             // no path items found
-
-  _pathList = new pathItem[ _pathCount];                    // create new path item array
-                                                            // /path1/path2
-  char*  ptr_S = _path;                                     // ^ ptr_S = start of path1
-  char*  ptr_E = strchr( ptr_S + 1, '/');                   //       ^ ptr_E = end of path1
-  char*  ptr_L = _path + _pathSize;                         //             ^ ptr_L =end of path
-  int    count = 0;                                         // path item count
-
-  while ( count < _pathCount) {                             // for all path items
-    ptr_E = ptr_E ? ptr_E : ptr_L;                          // check if ptr_E is still valid
-
-    _pathList[ count] = ptr_S + 1; *ptr_S = 0;              // path item = 1st char after '/'
-
-    ptr_S = ptr_E;                                          // new path item start = old path item end
-    ptr_E = strchr( ptr_S + 1, '/');                        // ptr_E = next '/' after ptr_S
-    count++;                                                // prepare for next argument
-  }
-
-  #ifdef DEBUG_SIMPLE_WEBSERVER
+  VALUE( _pathCount);
   for ( int i = 0; i < _pathCount; i++) {
-    LABEL( F( "> path "),  i);
-    LABEL( F( ": "     ), _pathList[ i]) LF;
-  }
-  #endif
-}
+    VALUE( _path[i]);
+  } LF;
 
-// parse HTTP request args
-void SimpleWebServer::_parseArgs()
-{
-  if ( _argsList) delete[] _argsList;                       // destroy argument array
-  _argsSize  = strlen( _args);                              // determine args length
-  _argsList  = 0;                                           // reset args item array
-  _argsCount = ( _args[0] == '?');                          // reset args item counter
-
-  for ( int i = 0; i < _argsSize; i++) {
-    _argsCount += ( _args[i] == '&');                       // count arguments ending on '&')
-  }
-
-  #ifdef DEBUG_SIMPLE_WEBSERVER
-  LABEL( F("> argsCount = "), _argsCount) LF;
-  #endif
-
-  if ( _argsCount == 0) return;
-
-  _argsList = new argument[ _argsCount];                    // create args item array
-                                                            // ?par1=val1&par2=val2
-  char* arg_S = _args;                                      // ^ arg_s = start of par1
-  char* val_S = strchr( arg_S + 1, '=');                    //      ^ val_s = end of par1
-  char* arg_E = strchr( arg_S + 1, '&');                    //           ^ arg_e = end of val1
-  char* ptr_L = _args + _argsSize;                          //                     ^ ptr_L = end of args
-  int   count = 0;                                          // args item counter
-
-  while ( count < _argsCount) {
-    val_S = val_S ? val_S : ptr_L;                          // check if val_S is still valid
-    arg_E = arg_E ? arg_E : ptr_L;                          // check if arg_E is still valid
-
-    if ( val_S < arg_E) {                                   // check if proper '=' has been found
-      _argsList[ count].label = arg_S + 1; *arg_S = 0;      // label item = 1st char after '?' or '&'
-      _argsList[ count].value = val_S + 1; *val_S = 0;      // value item = 1st char after '='
-    } else {
-      _argsList[ count].label = arg_S + 1; *arg_S = 0;      // label item = 1st char after '?' or '&'
-      _argsList[ count].value = NULL;                       // value item = non existing
-
-      #ifdef DEBUG_SIMPLE_WEBSERVER
-      VALUE( F( "> error in argument list for argument "), count);
-      #endif
-    }
-
-    arg_S = arg_E;                                          // label item = next parem item
-    val_S = strchr( arg_S + 1, '=');                        // set end of val (next '=')
-    arg_E = strchr( arg_S + 1, '&');                        // set end of arg (next'&'
-    count++;                                                // prepare for next argument
-  }
-
-  strClr( _args);                                           // terminate _path correctly
-
-  #ifdef DEBUG_SIMPLE_WEBSERVER
+  VALUE( _argsCount);
   for ( int i = 0; i < _argsCount; i++) {
-    LABEL( F( "> args "  ),  i); PRINT( F(  ": "));
-    VALUE( _argsList[ i].label, _argsList[ i].value) LF;
-  }
+    VALUE( _args[i].label); VALUE( _args[i].value);
+  } LF;
   #endif
+
+  return ( mode != HTTP_BAD_REQUEST);
 }
 
-#if defined(SIMPLEWEBSERVER_DEBUG)
+#ifdef SIMPLEWEBSERVER_DEBUG
 #define CPRINT(S) _client.print(S); PRINT(S);
 #else
 #define CPRINT(S) _client.print(S);
 #endif
 
-// send response to client (code, content type)
+// send response header to client (code, content size, content type)
 void SimpleWebServer::_sendHeader( int code, size_t size, const char* content_type)
 {
-  if ( _client.connected()) {                               // if client session still active
-    CPRINT( F( "HTTP/1.1 "));                               // send return code
-    CPRINT( code);
-    CPRINT( " " );
+  if ( _client.connected() && _header) {                    // if client session still active
+    CPRINT( F( "HTTP/1.1 ")); CPRINT( code); CPRINT( " ");  // send return code
     CPRINT( HTTP_CodeMessage( code));
     CPRINT( "\r\n");
 
   //CPRINT( "Host"); CPRINT( Ethernet.getHostName();
 
-    CPRINT( F( "User-Agent: "));                            // send additional headers
-    CPRINT( F( "Arduino-ethernet"));
+    CPRINT( F( "User-Agent: "  )); CPRINT( F( "Arduino-ethernet"));
+    CPRINT( "\r\n");                                        // send additional headers
+
+    CPRINT( F( "Content-Length: ")); CPRINT( size);
     CPRINT( "\r\n");
 
-    CPRINT( F( "Content-Length: "));
-    CPRINT( size);
+    CPRINT( F( "Content-Type: "  )); CPRINT( content_type ? content_type : "text/html");
     CPRINT( "\r\n");
 
-    CPRINT( F( "Content-Type: "));
-    CPRINT( content_type ? content_type : "text/html");
+    CPRINT( F( "Connection: "    )); CPRINT( F( "close"));
+    CPRINT( "\r\n");
     CPRINT( "\r\n");
 
-    CPRINT( F( "Connection: "));
-    CPRINT( F( "close"));
-    CPRINT( "\r\n");
-    CPRINT( "\r\n");
+    _header = false;
   }
 }
 
