@@ -10,16 +10,16 @@
 // where the relays can be controlled via API calls over HTTP
 //
 // Test working with (replace with proper IP address if changed):
-// curl -i -X GET "http://192.168.1.60"                        -> return HTTP identify
-// curl -i -X GET "http://192.168.1.60/relays"                 -> show status of all relays
-// curl -i -X GET "http://192.168.1.60/relays?state=on"        -> show relays with status on
-// curl -i -X GET "http://192.168.1.60/relays/3"               -> show status of relay 3
-// curl -i -X GET "http://192.168.1.60/relays/4"               -> show (invalid relay)
-// curl -i -X PUT "http://192.168.1.60/relays?state=on"        -> switch all relays on
-// curl -i -X PUT "http://192.168.1.60/relays?state=off"       -> switch all relays off
-// curl -i -X PUT "http://192.168.1.60/relays/3?state=on"      -> switch relay 3 on
-// curl -i -X PUT "http://192.168.1.60/relays/3?state=off"     -> switch relay 3 off
-// curl -i -X PUT "http://192.168.1.60/relays/3?state=blink"   -> error (invalid value)
+// curl -i -X GET "http://192.168.1.68"                        -> return HTTP identify
+// curl -i -X GET "http://192.168.1.68/relays"                 -> show status of all relays
+// curl -i -X GET "http://192.168.1.68/relays?state=on"        -> show relays with status on
+// curl -i -X GET "http://192.168.1.68/relays/3"               -> show status of relay 3
+// curl -i -X GET "http://192.168.1.68/relays/4"               -> show (invalid relay)
+// curl -i -X PUT "http://192.168.1.68/relays?state=on"        -> switch all relays on
+// curl -i -X PUT "http://192.168.1.68/relays?state=off"       -> switch all relays off
+// curl -i -X PUT "http://192.168.1.68/relays/3?state=on"      -> switch relay 3 on
+// curl -i -X PUT "http://192.168.1.68/relays/3?state=off"     -> switch relay 3 off
+// curl -i -X PUT "http://192.168.1.68/relays/3?state=blink"   -> error (invalid value)
 
 #include "SimpleWebServer.h"
 #include "SimpleUtils.h"
@@ -28,13 +28,14 @@
 #define SERVER_NAME "NetRelay-01"                           // host name
 #define SERVER_PORT 80                                      // host port
 
-const char* ssid     = "xxxxxxxx";                          // replace with proper ssid
-const char* password = "xxxxxxxx";                          // replace with proper password
+#include "MySecrets.h"                                     // Wifi Settings (change in MySecrets.h)
+const char ssid[] = SECRET_SSID;
+const char pass[] = SECRET_PASS;
 
 byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // mac address
-byte server_ip4[]     = { 192, 168, 1, 60 };                // lan ip (e.g. "192.168.1.60")
-byte server_gateway[] = { 192, 168, 1, 1 };                 // router gateway
-byte server_subnet[]  = { 255, 255, 255, 0 };               // subnet mask
+byte server_ip4[]     = { 192, 168,   1,  68 };             // lan ip (e.g. "192.168.1.60")
+byte server_gateway[] = { 192, 168,   1,   1 };             // router gateway
+byte server_subnet[]  = { 255, 255, 255,   0 };             // subnet mask
 
 SimpleWebServer server( SERVER_PORT);                       // ardiuno  server
 
@@ -51,27 +52,31 @@ uint8_t relaySet[ RELAY_COUNT];                             // relay status (val
 
 void handleRelay_GET();
 void handleRelay_PUT();
+
 void configRelay( void);
-void updateRelay( int);
-void updateRelay( int, int);
-bool relay2Json ( char*, unsigned int, int);
-bool relay2Json ( char*, unsigned int, int, int);
+void updateRelay( uint8_t);
+void updateRelay( uint8_t, uint8_t);
+
+void relay2Json ( char*, size_t, uint8_t);
+void relay2Json ( char*, size_t, uint8_t, uint8_t);
 
 void setup() {
   BEGIN( 115200) LF;                                        // open serial communications
 
-  PRINT( F( "===================")) LF;                     // show header
-  PRINT( F( "-  Network Relay  -")) LF;
-  PRINT( F( "===================")) LF;
+  PRINT( F( "# ----------------------------")) LF;               // show header
+	PRINT( F( "# -  Simple HTTP JSON Relay  -")) LF;
+  PRINT( F( "# -  V0.8       (DennisB66)  -")) LF;
+  PRINT( F( "# ----------------------------")) LF;
+  PRINT( F( "#")) LF;
 
 #if defined(ESP8266)                                        // ESP8266 = connect via WiFi
   WiFi.hostname( SERVER_NAME);                              // set host name
   WiFi.config( server_ip4, server_gateway, server_subnet);  // set fixed IP address
-  WiFi.begin( ssid, password);                              // open WiFi connection
+  WiFi.begin( ssid, pass);                                  // open WiFi connection
   while ( WiFi.status() != WL_CONNECTED) delay(500);        // wait for  connection
 
   LABEL( F( "# connected to "), ssid);
-  LABEL( F( " / IP = "), WiFi.localIP()) LF;
+  LABEL( F( " / IP ="), WiFi.localIP()) LF;
   PRINT( F( "#")) LF;
 #else                                                       // Arduino = connect via Ethernet
 //Ethernet.hostName( SERVER_NAME);                          // not supported (yet)
@@ -93,52 +98,52 @@ void setup() {
 }
 
 void loop() {
-  server.handle();
-  delay( 100);                                              // check every second for a new request
+  server.handle(); yield();                                 // handle each new request
 }
 
 // handle GET on "relay" commands
 void handleRelay_GET()
-{
+{                                                           // check on path / args boundaries
   if (( server.pathCount() <  1) || ( server.pathCount() > 2)) return;
   if (( server.argsCount() <  0) || ( server.argsCount() > 1)) return;
   if (( server.pathCount() == 2) && ( server.argsCount() > 0)) return;
 
-  char response[256]; strClr( response);
-  int  relay = server.path( 1) ? atoi( server.path( 1)) : -1;
-  int  state = RELAY_ANY;
+  char        reply[256]; strClr( reply);                   // reply buffer
+  const char* index      = server.path( 1);                 // relay index string
+  uint8_t     relay      = index ? atoi( index) : 0;        // relay index value
+  uint8_t     state      = RELAY_ANY;                       // relay state
 
-  state = server.arg( "state", CMD_ON  ) ? RELAY_ON  : state;
-  state = server.arg( "state", CMD_OFF ) ? RELAY_OFF : state;
+  state = server.arg( "state", CMD_ON ) ? RELAY_ON : state; // check on state = CMD_ON
+  state = server.arg( "state", CMD_OFF) ? RELAY_OFF: state; // check on state = CMD_OFF
 
-  if ( server.path( 1)) {                                   // show status for relay = idx
-    relay2Json( response, sizeof( response), relay, state);
-    server.response( returnCode = 200, "text/plain", response);
-  } else {                                                  // show arrays with status = cmd
-    relay2Json( response, sizeof( response),        state);
-    server.response( returnCode = 200, "text/plain", response);
+  if ( index) {                                             // if specific relay is speciified
+    relay2Json( reply, sizeof( reply), relay, state);       // store specific relay in json
+    server.respond( returnCode = 200, "text/plain", reply); // send OK + reply to client
+  } else {
+    relay2Json( reply, sizeof( reply),        state);       // store all relays in json
+    server.respond( returnCode = 200, "text/plain", reply); // send OK + reply to client
   }
 }
 
 // handle PUT on "relay" commands
 void handleRelay_PUT()
-{
+{                                                           // check on path / args boundaries
   if (( server.pathCount() < 1) || ( server.pathCount() > 2)) return;
   if (( server.argsCount() < 1) || ( server.argsCount() > 1)) return;
 
-  int relay = server.path( 1) ? atoi( server.path( 1)) : -1;
-  int state = RELAY_ANY;
+  const char* index = server.path( 1);                      // relay index string
+  uint8_t     relay = index ? atoi( index) : 0;             // relay index value
+  uint8_t     state = RELAY_ANY;                            // relay state
 
-  state = server.arg( "state", CMD_ON  ) ? RELAY_ON  : state;
-  state = server.arg( "state", CMD_OFF ) ? RELAY_OFF : state;
+  state = server.arg( "state", CMD_ON ) ? RELAY_ON : state; // get requested state = on
+  state = server.arg( "state", CMD_OFF) ? RELAY_OFF: state; // get requested state = off
 
-  if ( server.path( 1)) {                                   // set state = cmd for relay = idx
-    updateRelay( relay, state);
-    server.response( returnCode = 200);
-  } else {                                                  // set state = cmd for relay = idx
-    updateRelay( state);
-     returnCode = 200;
-    server.response( returnCode = 200);
+  if ( index) {                                             // if specific relay is speciified
+    updateRelay( relay, state);                             // set state for specfic relay
+    server.respond( returnCode = 200);                      // send OK to client
+  } else {
+    updateRelay( state);                                    // set state for all relays
+    server.respond( returnCode = 200);                      // send OK to client
   }
 }
 
@@ -154,51 +159,50 @@ void configRelay()
 }
 
 // set all relays with value cmd
-void updateRelay( int state)
+void updateRelay( uint8_t state)
 {
-  for( int i = 0; i < RELAY_COUNT; i++) {
-    updateRelay( i, state);
+  for( int i = 0; i < RELAY_COUNT; i++) {                   // for all relays
+    updateRelay( i, state);                                 // set state of relay i
   }
 }
 
-// set relay idx with value cmd
-void updateRelay( int i, int state)
+// set state of relay i
+void updateRelay( uint8_t i, uint8_t state)
 {
   if (( i >= 0) && ( i < RELAY_COUNT)) {                    // check if relay exists
-    digitalWrite( relayPin[ i], relaySet[ i] = state);      // write cmd to relay idx
+    digitalWrite( relayPin[ i], relaySet[ i] = state);      // set state of relay i
   }
 }
 
-
 // generate JSON for all relays
-bool relay2Json( char* content, unsigned int size, int state)
+void relay2Json( char* content, size_t size, uint8_t state)
 {
-  StaticJsonBuffer<200> jsonBuffer;                         // create buffer
+  StaticJsonBuffer<256> jsonBuffer;                         // create buffer
   JsonArray& root     = jsonBuffer.createArray();           // create array
 
-  for( int i = 0; i < RELAY_COUNT; i++) {
+  for( int i = 0; i < RELAY_COUNT; i++) {                   // for all relays
     if (( state == RELAY_ANY) || ( state == relaySet[i])) {
       JsonObject& item = root.createNestedObject();         // create object
       item[ "relay"] = i;                                   // write object
-      item[ "state"] = ( relaySet[ i] == RELAY_ON ? CMD_ON : CMD_OFF);
+      item[ "state"] = ( relaySet[ i] == RELAY_ON) ? CMD_ON : CMD_OFF;
     }
   }
 
-  root.printTo( content, size);                             // write to char buffer
+//JsonObject& item = root.createNestedObject();             // create object
 
-  return true;                                              // success = json created
+  root.printTo( content, size);                             // write to char buffer                                          // success = json created
 }
 
 // generate JSON for relay item i
-bool relay2Json( char* content, unsigned int size, int i, int state)
+void relay2Json( char* content, size_t size, uint8_t i, uint8_t state)
 {
-  if (( i >= 0) & ( i < RELAY_COUNT)) {                     // check if relay exists
-    StaticJsonBuffer<200> jsonBuffer;                       // create buffer
+  if (( i >= 0) & ( i < RELAY_COUNT)) {                     // check if relay is valid
+    StaticJsonBuffer<128> jsonBuffer;                       // create buffer
     JsonArray&  root    = jsonBuffer.createArray();         // create array
     JsonObject& item    = root.createNestedObject();        // create object
 
     item[ "relay"] = i;                                     // write object
-    item[ "state"] = ( relaySet[ i] == RELAY_ON ? CMD_ON : CMD_OFF);
+    item[ "state"] = ( relaySet[ i] == RELAY_ON) ? CMD_ON : CMD_OFF;
 
     root.printTo( content, size);                           // write to char buffer
   } else {

@@ -1,7 +1,7 @@
 // Copyright  : Dennis Buis (2017)
 // License    : MIT
 // Platform   : Arduino
-// Library    : Simple Web Server Library for Arduino
+// Library    : Simple Web Server Library for Arduino & ESP8266
 // File       : Simple_HTTP_Relay.ino
 // Purpose    : Example to demonstrate working of SimpleWebServer library
 // Repository : https://github.com/DennisB66/Simple-Web-Server-Library-for-Arduino
@@ -10,35 +10,37 @@
 // where the relays can be controlled via API calls over HTTP
 //
 // Test working with (replace with proper IP address if changed):
-// curl -i -X GET "http://192.168.1.60"                        -> return HTTP identify
-// curl -i -X GET "http://192.168.1.60/relays"                 -> show status of all relays
-// curl -i -X GET "http://192.168.1.60/relays?state=on"        -> show relays with status on
-// curl -i -X GET "http://192.168.1.60/relays/3"               -> show status of relay 3
-// curl -i -X GET "http://192.168.1.60/relays/4"               -> show (invalid relay)
-// curl -i -X PUT "http://192.168.1.60/relays?state=on"        -> switch all relays on
-// curl -i -X PUT "http://192.168.1.60/relays?state=off"       -> switch all relays off
-// curl -i -X PUT "http://192.168.1.60/relays/3?state=on"      -> switch relay 3 on
-// curl -i -X PUT "http://192.168.1.60/relays/3?state=off"     -> switch relay 3 off
-// curl -i -X PUT "http://192.168.1.60/relays/3?state=blink"   -> error (invalid value)
+// curl -i -X GET "http://192.168.1.68"                        -> return HTTP identify
+// curl -i -X GET "http://192.168.1.68/relays"                 -> show status of all relays
+// curl -i -X GET "http://192.168.1.68/relays?state=on"        -> show relays with status on
+// curl -i -X GET "http://192.168.1.68/relays/3"               -> show status of relay 3
+// curl -i -X GET "http://192.168.1.68/relays/4"               -> show (invalid relay)
+// curl -i -X PUT "http://192.168.1.68/relays?state=on"        -> switch all relays on
+// curl -i -X PUT "http://192.168.1.68/relays?state=off"       -> switch all relays off
+// curl -i -X PUT "http://192.168.1.68/relays/3?state=on"      -> switch relay 3 on
+// curl -i -X PUT "http://192.168.1.68/relays/3?state=off"     -> switch relay 3 off
+// curl -i -X PUT "http://192.168.1.68/relays/3?state=blink"   -> error (invalid value)
 
 #include "SimpleWebServer.h"
 #include "SimpleUtils.h"
 
 #define SERVER_NAME "NetRelay-01"                           // host name
 #define SERVER_PORT 80                                      // host port
+#define VERBOSE_MODE
 
-const char* ssid     = "xxxxxxxx";                          // replace with proper ssid
-const char* password = "xxxxxxxx";                          // replace with proper password
+#include "MySecrets.h"                                      // Wifi Settings (change in MySecrets.h)
+const char ssid[] = SECRET_SSID;
+const char pass[] = SECRET_PASS;
 
 byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // mac address
-byte server_ip4[]     = { 192, 168, 1, 60 };                // lan ip (e.g. "192.168.1.60")
-byte server_gateway[] = { 192, 168, 1, 1 };                 // router gateway
-byte server_subnet[]  = { 255, 255, 255, 0 };               // subnet mask
+byte server_ip4[]     = { 192, 168,   1,  68 };             // lan ip (e.g. "192.168.1.60")
+byte server_gateway[] = { 192, 168,   1,   1 };             // router gateway
+byte server_subnet[]  = { 255, 255, 255,   0 };             // subnet mask
 
 SimpleWebServer server( SERVER_PORT);                       // ardiuno  server
 
 #define RELAY_COUNT  4                                      // number of available relays
-#define RELAY_ANY    0
+#define RELAY_ANY    0                                      // status for relay = dc (don't care)
 #define RELAY_ON     1                                      // status for relay = on
 #define RELAY_OFF    2                                      // status for relay = off
 
@@ -48,7 +50,7 @@ SimpleWebServer server( SERVER_PORT);                       // ardiuno  server
 uint8_t relayPin[] = { D2, D3, D4, D5 };                    // pin configuration for relay (e.g. relay pin 0 = arduino pin 2)
 uint8_t relaySet[ RELAY_COUNT];                             // relay status (values indicated by RELAY_ON / RELAY_OFF)
 
-void handleRelay_GET();
+void handleRelay_GET();                                     // forward declarations
 void handleRelay_PUT();
 void configRelay( void);
 void updateRelay( int);
@@ -57,16 +59,18 @@ void relayPrint ( char*, int);
 void relayPrint ( char*, int, int);
 
 void setup() {
-  BEGIN( 115200) LF;                                          // open serial communications
+  BEGIN( 115200) LF;                                        // open serial communications
 
-  PRINT( F( "===================")) LF;                     // show header
-  PRINT( F( "-  Network Relay  -")) LF;
-  PRINT( F( "===================")) LF;
+  PRINT( F( "# -----------------------")) LF;               // show header
+	PRINT( F( "# -  Simple HTTP Relay  -")) LF;
+  PRINT( F( "# -  V0.8  (DennisB66)  -")) LF;
+  PRINT( F( "# -----------------------")) LF;
+  PRINT( F( "#")) LF;
 
 #if defined(ESP8266)                                        // ESP8266 = connect via WiFi
   WiFi.hostname( SERVER_NAME);                              // set host name
   WiFi.config( server_ip4, server_gateway, server_subnet);  // set fixed IP address
-  WiFi.begin( ssid, password);                              // open WiFi connection
+  WiFi.begin( ssid, pass);                                  // open WiFi connection
   while ( WiFi.status() != WL_CONNECTED) delay(500);        // wait for  connection
 
   LABEL( F( "# connected to "), ssid);
@@ -78,13 +82,13 @@ void setup() {
   Ethernet.begin( server_mac, server_ip4, server_gateway, server_subnet);
                                                             // open ethernet connection
   LABEL( F( "# connected to "), Ethernet.localIP()) LF;
-  PRINT( F( "#")) LF;
 #endif
 
   server.begin();                                           // starting webserver
   server.handleOn( handleRelay_GET, "relays", HTTP_GET);    // set function for "/relays"
   server.handleOn( handleRelay_PUT, "relays", HTTP_PUT);    // set function for "/relays"
 
+  PRINT( F( "#")) LF;
   PRINT( F( "# initializing relay")) LF;
   configRelay();                                            // prepare relays (defauls = all off)
   PRINT( F( "# ready for requests")) LF;
@@ -92,52 +96,52 @@ void setup() {
 }
 
 void loop() {
-  server.handle();
-  delay( 100);                                              // check every second for a new request
+  server.handle();                                          // handle each new request
 }
 
 // handle GET on "relay" commands
 void handleRelay_GET()
-{
+{                                                           // check on path / args boundaries
   if (( server.pathCount() <  1) || ( server.pathCount() > 2)) return;
   if (( server.argsCount() <  0) || ( server.argsCount() > 1)) return;
   if (( server.pathCount() == 2) && ( server.argsCount() > 0)) return;
 
-  char response[128]; strClr( response);
-  int  relay = server.path( 1) ? atoi( server.path( 1)) : -1;
-  int  state = RELAY_ANY;
+  char        reply[256]; strClr( reply);                   // reply buffer
+  const char* index      = server.path( 1);                 // relay index string
+  uint8_t     relay      = index ? atoi( index) : 0;        // relay index value
+  uint8_t     state      = RELAY_ANY;                       // relay state
 
-  state = server.arg( "state", CMD_ON  ) ? RELAY_ON  : state;
-  state = server.arg( "state", CMD_OFF ) ? RELAY_OFF : state;
+  state = server.arg( "state", CMD_ON ) ? RELAY_ON : state; // get requested state = on
+  state = server.arg( "state", CMD_OFF) ? RELAY_OFF: state; // get requested state = off
 
-  if ( server.path( 1)) {                                   // show status for relay = idx
-    relayPrint( response, relay, RELAY_ANY);
-    server.response( returnCode = 200, "text/plain", response);
-  } else {                                                  // show arrays with status = cmd
-    relayPrint( response, state);
-    server.response( returnCode = 200, "text/plain", response);
+  if ( index) {                                             // if specific relay is speciified
+    relayPrint( reply, relay, RELAY_ANY);                   // show state for specific relay
+    server.respond( returnCode = 200, "text/plain", reply); // send OK + reply to client
+  } else {
+    relayPrint( reply, state);                              // show relays with specific state
+    server.respond( returnCode = 200, "text/plain", reply); // respond result to client
   }
 }
 
 // handle PUT on "relay" commands
 void handleRelay_PUT()
-{
+{                                                           // check on path / args boundaries
   if (( server.pathCount() < 1) || ( server.pathCount() > 2)) return;
   if (( server.argsCount() < 1) || ( server.argsCount() > 1)) return;
 
-  int relay = server.path( 1) ? atoi( server.path( 1)) : -1;
-  int state = RELAY_ANY;
+  const char* index = server.path( 1);                      // relay index string
+  uint8_t     relay = index ? atoi( index) : 0;             // relay index value
+  uint8_t     state = RELAY_ANY;                            // relay state
 
-  state = server.arg( "state", CMD_ON  ) ? RELAY_ON  : state;
-  state = server.arg( "state", CMD_OFF ) ? RELAY_OFF : state;
+  state = server.arg( "state", CMD_ON ) ? RELAY_ON : state; // get requested state = on
+  state = server.arg( "state", CMD_OFF) ? RELAY_OFF: state; // get requested state = off
 
-  if ( server.path( 1)) {                                   // set state = cmd for relay = idx
-    updateRelay( relay, state);
-    server.response( returnCode = 200);
-  } else {                                                  // set state = cmd for relay = idx
-    updateRelay( state);
-     returnCode = 200;
-    server.response( returnCode = 200);
+  if ( index) {                                             // if specific relay is speciified
+    updateRelay( relay, state);                             // set state for specfic relay
+    server.respond( returnCode = 200);                      // send OK to client
+  } else {
+    updateRelay( state);                                    // set state for all relays
+    server.respond( returnCode = 200);                      // send OK to client
   }
 }
 
@@ -155,40 +159,40 @@ void configRelay()
 // set all relays with value cmd
 void updateRelay( int state)
 {
-  for( int i = 0; i < RELAY_COUNT; i++) {
-    updateRelay( i, state);
+  for( int i = 0; i < RELAY_COUNT; i++) {                   // for all relays
+    updateRelay( i, state);                                 // set state of relay i
   }
 }
 
-// set relay idx with value cmd
+// set state of relay i
 void updateRelay( int i, int state)
 {
-  if (( i >= 0) && ( i < RELAY_COUNT)) {                       // check if relay exists
-    digitalWrite( relayPin[ i], relaySet[ i] = state);        // write cmd to relay idx
+  if (( i >= 0) && ( i < RELAY_COUNT)) {                    // check if relay is valid
+    digitalWrite( relayPin[ i], relaySet[ i] = state);      // set state of relay i
   }
 }
 
-// print status for all relays
-
+// print relay state for all relays (write buffer, requested state)
 void relayPrint( char* line, int state)
 {
-  for( int i = 0; i < RELAY_COUNT; i++) {
-    if (( state == 0) || ( relaySet[ i] == state )) {
-      relayPrint( line, i, state);
+  for( int i = 0; i < RELAY_COUNT; i++) {                   // for all relays
+    if (( state == RELAY_ANY) || ( state == relaySet[ i])) {
+      relayPrint( line, i, state);                          // write state of relay i
     }
   }
 }
 
-// print status for relay item i
+// print relay state for single relay (write buffer, relay i, requested state)
 void relayPrint( char* line, int i, int state)
 {
-  if (( i >= 0) && ( i < RELAY_COUNT) && (( state == RELAY_ANY) || ( state == relaySet[i]))) {
-    strcat( line, "# relay "); strcat( line, dec( i , 2));
+  if (( i >= 0) && ( i < RELAY_COUNT) &&                    // check if relay is valid
+     (( state == RELAY_ANY) || ( state == relaySet[i]))) {  // check if state is valid
+    strcat( line, "# relay "); strcat( line, dec( i , 2));  // write state of relay i
     strcat( line, " on pin "); strcat( line, dec( relayPin[i], 2));
     strcat( line, " = "     ); strcat( line, relaySet[ i] == RELAY_ON ? CMD_ON : CMD_OFF);
     strcat( line, "\r\n");
   } else {
     strcat( line, "# relay "    ); strcat( line, dec(i , 2));
-    strcat( line, " not defined"); strcat( line, "\r\n");
+    strcat( line, " not defined"); strcat( line, "\r\n");   // undefined relay
   }
 }

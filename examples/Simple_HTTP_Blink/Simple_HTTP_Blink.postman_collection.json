@@ -1,0 +1,117 @@
+{
+	"info": {
+		"_postman_id": "6e60bd1b-7e58-449c-af36-78fda96dcea7",
+		"name": "Simple_HTTP_Blink",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "WebServer identify",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer get blink status",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/blink",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"blink"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer put blink on",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/blink?state=on",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"blink"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "on"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer put blink off",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/blink?state=off",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"blink"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "off"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

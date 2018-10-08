@@ -1,0 +1,7 @@
+#ifndef MYSECRETS_H
+#define MYSECRETS_H
+
+#define SECRET_SSID "XXXXXXXX"
+#define SECRET_PASS "XXXXXXXX"
+
+#endif

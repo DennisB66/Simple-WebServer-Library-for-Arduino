@@ -20,18 +20,22 @@
 #define SERVER_NAME "NetBlink-01"                           // host name
 #define SERVER_PORT 80                                      // host port
 
-const char* ssid     = "xxxxxxxx";                          // replace with proper ssid
-const char* password = "xxxxxxxx";                          // replace with proper password
+#include "MySecrets.h"                                      // Wifi Settings (change in MySecrets.h)
+const char ssid[] = SECRET_SSID;
+const char pass[] = SECRET_PASS;
 
 byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
-byte server_ip4[]     = { 192, 168, 1, 69 };                // lan ip (e.g. "192.168.1.60")
-byte server_gateway[] = { 192, 168, 1, 1 };                 // router gateway
-byte server_subnet[]  = { 255, 255, 255, 0 };               // subnet mask
+byte server_ip4[]     = { 192, 168,   1,  68 };             // lan ip (e.g. "192.168.1.60")
+byte server_gateway[] = { 192, 168,   1,   1 };             // router gateway
+byte server_subnet[]  = { 255, 255, 255,   0 };             // subnet mask
 
 SimpleWebServer server( SERVER_PORT);                       // ardiuno  server
 
-#define LED_ON  "on"                                        // command to switch blinking on
-#define LED_OFF "off"                                       // command to switch blinking off
+#define LED_ON  1                                           // value to switch led on
+#define LED_OFF 0                                           // value to switch led off
+
+#define CMD_ON  "on"                                        // command to switch led on
+#define CMD_OFF "off"                                       // command to switch led off
 
 bool ledStatus;                                             // ledStatus on startup
 
@@ -40,20 +44,22 @@ void handleBlink_PUT();                                     // callback for API 
 
 void setup() {
   BEGIN( 115200) LF;                                             // activate Serial out
-  PRINT( F( "# ================")) LF;                        // show header on server console
-  PRINT( F( "# -  HTTP Blink  -")) LF;
-  PRINT( F( "# ================")) LF;
-  LABEL( F( "# Built-in led = "), LED_BUILTIN)   LF;
+
+  PRINT( F( "# -----------------------")) LF;               // show header
+  PRINT( F( "# -  Simple HTTP Blink  -")) LF;
+  PRINT( F( "# -  V0.8  (DennisB66)  -")) LF;
+  PRINT( F( "# -----------------------")) LF;
+  LABEL( F( "# Built-in led = "), LED_BUILTIN) LF;
+  PRINT( F( "#")) LF;
 
 #if defined(ESP8266)                                        // ESP8266 = connect via WiFi
   WiFi.hostname( SERVER_NAME);                              // set host name
   WiFi.config( server_ip4, server_gateway, server_subnet);  // set fixed IP address
-  WiFi.begin( ssid, password);                              // open WiFi connection
+  WiFi.begin( ssid, pass);                                  // open WiFi connection
   while ( WiFi.status() != WL_CONNECTED) delay(500);        // wait for  connection
 
   LABEL( F( "# Connected to "), ssid);
   LABEL( F( " / IP = "), WiFi.localIP()) LF;
-  PRINT( F( "#")) LF;
 #else                                                       // Arduino = connect via Ethernet
 //Ethernet.hostName( SERVER_NAME);                          // not supported (yet)
   ETHERNET_RESET( 11U);                                     // Leonardo ETH reset
@@ -66,53 +72,48 @@ void setup() {
   server.handleOn( handleBlink_GET, "blink", HTTP_GET);     // set callback for GET on "blink"
   server.handleOn( handleBlink_PUT, "blink", HTTP_PUT);     // set function for PUT on "blink"
 
-  pinMode( LED_BUILTIN, INPUT);                             // set LED output mode
-  ledStatus = digitalRead( LED_BUILTIN);
-
   PRINT( F( "# Ready for HTTP requests")) LF;
+  PRINT( F( "#")) LF;
 }
 
 void loop() {
-  server.handle();                                          // call webserver handler
-  yield();                                                  // time for system tasks
+  server.handle(); yield();                                 // call webserver handler
 }
 
 // handle on "blink" GET commands
 void handleBlink_GET()
-{
+{                                                           // check on path / args boundaries
   if (( server.pathCount() > 1) || ( server.argsCount() > 0)) return;
-                                                            // check on proper API cal
-  pinMode( LED_BUILTIN, INPUT);                             // set LED output mode
 
-  if ( ledStatus != digitalRead( LED_BUILTIN)) {
-    server.response( returnCode = 200, "text/plain", "Led = on\n" );
-                                                            // response to client
-    PRINT( F( "# Led = on" )) LF;                           // response to console
-  } else {
-    server.response( returnCode = 200, "text/plain", "Led = off\n");
-                                                            // response to client
-    PRINT( F( "# Led = off")) LF;                           // response to server console
-  }
+  //pinMode( LED_BUILTIN, INPUT);                             // set LED input mode
+  bool state = digitalRead( LED_BUILTIN);
+
+  server.respond( returnCode = 200, "text/plain");        // response to client
+  server.sendLine( F( "led = "), state ? CMD_ON : CMD_OFF);
+
+  LABEL( F( "# Led = "), state) LF;                     // response to console
 }
 
 // handle on "blink" PUT commands
 void handleBlink_PUT()
-{
-  if (( server.pathCount() > 1) || ( server.argsCount() > 2)) return;
-                                                            // check on proper API call
+{                                                           // check on path / args boundaries
+  if (( server.pathCount() > 1) || ( server.argsCount() > 1)) return;
+
   pinMode( LED_BUILTIN, OUTPUT);                            // set LED output mode
 
-  if ( server.arg( "state", LED_ON )) {
-    digitalWrite( LED_BUILTIN, !ledStatus);                 // switch led on
-    server.response( returnCode = 200, "text/plain", "Led switched on");
+  if ( server.arg( "state", CMD_ON )) {
+    digitalWrite( LED_BUILTIN, LED_ON);                 // switch led on
+    server.respond( returnCode = 200, "text/plain");        // response to client
+    server.sendLine( F( "led switched "), CMD_ON );
                                                             // respond to client
-    PRINT( F( "# Led switched on" )) LF;                    // respond to server console
+    LABEL( F( "# Led switched "), CMD_ON ) LF;              // respond to server console
   }
 
-  if ( server.arg( "state", LED_OFF)) {
-    digitalWrite( LED_BUILTIN,  ledStatus);                 // switch led off
-    server.response( returnCode = 200, "text/plain", "Led switched off");
-                                                            // respond to client
-    PRINT( F( "# Led switched off")) LF;                    // respond to server console
+  if ( server.arg( "state", CMD_OFF)) {
+    digitalWrite( LED_BUILTIN, LED_OFF);                 // switch led off
+    server.respond( returnCode = 200, "text/plain");        // response to client
+    server.sendLine( F( "led switched "), CMD_OFF);
+
+    LABEL( F( "# Led switched "), CMD_OFF) LF;              // respond to server console
   }
 }

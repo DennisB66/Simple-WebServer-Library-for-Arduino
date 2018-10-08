@@ -1,0 +1,525 @@
+{
+	"info": {
+		"_postman_id": "6b8f26bb-3f0d-4ec2-8108-b9e9004958f2",
+		"name": "Simple_HTTP_Relay",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "WebServer identify",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer get relays",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer get relays = on",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays?state=on",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "on"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer get relays = off",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays?state=off",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "off"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer get relay 0",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/0",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"0"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer get relay 1",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/1",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer get relay 2",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/2",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer get relay 3",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/3",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer set relays = on",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays?state=on",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "on"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer set relays = off",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays?state=off",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "off"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer set relay 0 = on",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/0?state=on",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"0"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "on"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer set relay 0 = off",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/0?state=off",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"0"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "off"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer set relay 1 = on",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/1?state=on",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"1"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "on"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer set relay 1 = off",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/1?state=off",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"1"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "off"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer set relay 2 = on",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/2?state=on",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"2"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "on"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer set relay 2 = off",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/2?state=off",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"2"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "off"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer set relay 3 = on",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/3?state=on",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"3"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "on"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebServer set relay 3 = off",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "192.168.1.68/relays/3?state=off",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"68"
+					],
+					"path": [
+						"relays",
+						"3"
+					],
+					"query": [
+						{
+							"key": "state",
+							"value": "off"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
