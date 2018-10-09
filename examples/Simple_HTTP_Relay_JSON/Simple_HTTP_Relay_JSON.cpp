@@ -23,6 +23,7 @@
 
 #include "SimpleWebServer.h"
 #include "SimpleUtils.h"
+#include "SimplePrint.h"
 #include "ArduinoJson.h"
 
 #define SERVER_NAME "NetRelay-01"                           // host name
@@ -77,22 +78,19 @@ void setup() {
 
   LABEL( F( "# connected to "), ssid);
   LABEL( F( " / IP ="), WiFi.localIP()) LF;
-  PRINT( F( "#")) LF;
 #else                                                       // Arduino = connect via Ethernet
 //Ethernet.hostName( SERVER_NAME);                          // not supported (yet)
   ETHERNET_RESET( 11U);                                     // Leonardo ETH reset
   Ethernet.begin( server_mac, server_ip4, server_gateway, server_subnet);
                                                             // open ethernet connection
   LABEL( F( "# connected to "), Ethernet.localIP()) LF;
-  PRINT( F( "#")) LF;
 #endif
 
   server.begin();                                           // starting webserver
   server.handleOn( handleRelay_GET, "relays", HTTP_GET);    // set function for "/relays"
   server.handleOn( handleRelay_PUT, "relays", HTTP_PUT);    // set function for "/relays"
-
-  PRINT( F( "# initializing relay")) LF;
   configRelay();                                            // prepare relays (defauls = all off)
+
   PRINT( F( "# ready for requests")) LF;
   PRINT( F( "#")) LF;
 }

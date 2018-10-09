@@ -473,8 +473,8 @@ void SimpleWebServer::_clientStop()
 {
   if ( !_client.connected()) return;                        // check if client still active
 
-  if ( _content) { CPRINT( F( "\r\n")); TRACE; }            // send EOL if content has been sent
-  if ( _newline) { CPRINT( F( "\r\n")); TRACE; }            // send EOL if extra /CR/NL required
+  if ( _content) { CPRINT( F( "\r\n")); }            // send EOL if content has been sent
+  if ( _newline) { CPRINT( F( "\r\n")); }            // send EOL if extra /CR/NL required
 
   _client.flush(); _client.stop();                          // close client session
 }

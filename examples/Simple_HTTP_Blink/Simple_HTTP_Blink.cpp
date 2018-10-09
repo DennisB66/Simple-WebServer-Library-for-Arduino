@@ -49,8 +49,8 @@ void setup() {
   PRINT( F( "# -  Simple HTTP Blink  -")) LF;
   PRINT( F( "# -  V0.8  (DennisB66)  -")) LF;
   PRINT( F( "# -----------------------")) LF;
-  LABEL( F( "# Built-in led = "), LED_BUILTIN) LF;
   PRINT( F( "#")) LF;
+  LABEL( F( "# Built-in led = "), LED_BUILTIN) LF;
 
 #if defined(ESP8266)                                        // ESP8266 = connect via WiFi
   WiFi.hostname( SERVER_NAME);                              // set host name
@@ -72,7 +72,7 @@ void setup() {
   server.handleOn( handleBlink_GET, "blink", HTTP_GET);     // set callback for GET on "blink"
   server.handleOn( handleBlink_PUT, "blink", HTTP_PUT);     // set function for PUT on "blink"
 
-  PRINT( F( "# Ready for HTTP requests")) LF;
+  PRINT( F( "# ready for HTTP requests")) LF;
   PRINT( F( "#")) LF;
 }
 

@@ -75,7 +75,6 @@ void setup() {
 
   LABEL( F( "# connected to "), ssid);
   LABEL( F( " / IP = "), WiFi.localIP()) LF;
-  PRINT( F( "#")) LF;
 #else                                                       // Arduino = connect via Ethernet
 //Ethernet.hostName( SERVER_NAME);                          // not supported (yet)
   ETHERNET_RESET( 11U);                                     // Leonardo ETH reset
@@ -87,11 +86,9 @@ void setup() {
   server.begin();                                           // starting webserver
   server.handleOn( handleRelay_GET, "relays", HTTP_GET);    // set function for "/relays"
   server.handleOn( handleRelay_PUT, "relays", HTTP_PUT);    // set function for "/relays"
-
-  PRINT( F( "#")) LF;
-  PRINT( F( "# initializing relay")) LF;
   configRelay();                                            // prepare relays (defauls = all off)
-  PRINT( F( "# ready for requests")) LF;
+
+  PRINT( F( "# ready for HTTP requests")) LF;
   PRINT( F( "#")) LF;
 }
 
