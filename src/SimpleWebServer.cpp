@@ -82,11 +82,13 @@ bool SimpleWebServer::connect()
   _client = _server.available();
 
   if ( _client) {
+
     if ( _client.connected()) {                             // check on active client session
       strClr( _buffer);                                     // reset buffer
-      while ( !_client.available()) ;
-      while (  _client.available()) {                       // check on available client data
-        addChr( _buffer, _client.read(), HTTP_BUFFER_SIZE); // add char to buffer (ignore /r)
+      while ( !_client.available()) ;                       // wait for incoming client request
+      delay( 50);                                           // provide transmit time for client
+      while (  _client.available()) {                       // read all available client data
+        addChr( _buffer, _client.read(), HTTP_BUFFER_SIZE); // add char to buffer
       }
     }
 
@@ -413,7 +415,7 @@ void SimpleWebServer::_sendHeaderBegin( int code)
   if ( !_client.connected()) return;                        // check if client still active
 
   CPRINT( F( "HTTP/1.1 ")); CPRINT( code);                  // send HTTP/1.1 line
-  CPRINT( " ");  CPRINT( HTTP_CodeMessage( code));          // e.g. HTTP/1.1 200 OK
+  CPRINT( " "); CPRINT( HTTP_CodeMessage( code));           // e.g. HTTP/1.1 200 OK
   CPRINT( F( "\r\n"));                                      // next line
 }
 
@@ -473,8 +475,8 @@ void SimpleWebServer::_clientStop()
 {
   if ( !_client.connected()) return;                        // check if client still active
 
-  if ( _content) { CPRINT( F( "\r\n")); }            // send EOL if content has been sent
-  if ( _newline) { CPRINT( F( "\r\n")); }            // send EOL if extra /CR/NL required
+  if ( _content) { CPRINT( F( "\r\n")); }                   // send EOL if content has been sent
+  if ( _newline) { CPRINT( F( "\r\n")); }                   // send EOL if extra /CR/NL required
 
   _client.flush(); _client.stop();                          // close client session
 }
