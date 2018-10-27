@@ -9,10 +9,10 @@
 // This example works for an Arduino Uno with an Ethernet Shield or an ESP8266
 //
 // Test working with (replace with proper IP address if changed):
-// curl -i -X GET "http://192.168.1.60"                        -> return HTTP identify
-// curl -i -X GET "http://192.168.1.60/blink"                  -> show blinking status
-// curl -i -X PUT "http://192.168.1.60/blink?state=on"         -> switch blinking on
-// curl -i -X PUT "http://192.168.1.60/blink?state=off"        -> switch blinking off
+// curl -i -X GET "http://192.168.1.68"                        -> return HTTP identify
+// curl -i -X GET "http://192.168.1.68/blink"                  -> show blinking status
+// curl -i -X PUT "http://192.168.1.68/blink?state=on"         -> switch blinking on
+// curl -i -X PUT "http://192.168.1.68/blink?state=off"        -> switch blinking off
 
 #include "SimpleWebServer.h"
 #include "SimpleUtils.h"
@@ -31,8 +31,9 @@ byte server_subnet[]  = { 255, 255, 255,   0 };             // subnet mask
 
 SimpleWebServer server( SERVER_PORT);                       // ardiuno  server
 
-#define LED_ON  1                                           // value to switch led on
-#define LED_OFF 0                                           // value to switch led off
+#define LED_DEFAULT 2
+#define LED_ON      1                                       // value to switch led on
+#define LED_OFF     0                                       // value to switch led off
 
 #define CMD_ON  "on"                                        // command to switch led on
 #define CMD_OFF "off"                                       // command to switch led off
@@ -43,14 +44,14 @@ void handleBlink_GET();                                     // callback for API 
 void handleBlink_PUT();                                     // callback for API PUT handling
 
 void setup() {
-  BEGIN( 115200) LF;                                             // activate Serial out
+  BEGIN( 115200) LF;                                        // activate Serial out
 
   PRINT( F( "# -----------------------")) LF;               // show header
   PRINT( F( "# -  Simple HTTP Blink  -")) LF;
   PRINT( F( "# -  V0.8  (DennisB66)  -")) LF;
   PRINT( F( "# -----------------------")) LF;
   PRINT( F( "#")) LF;
-  LABEL( F( "# Built-in led = "), LED_BUILTIN) LF;
+  LABEL( F( "# Built-in led = "), LED_DEFAULT) LF;
 
 #if defined(ESP8266)                                        // ESP8266 = connect via WiFi
   WiFi.hostname( SERVER_NAME);                              // set host name
@@ -87,10 +88,10 @@ void handleBlink_GET()
 
   bool state = digitalRead( 2);
 
-  server.respond( returnCode = 200, "text/plain");        // response to client
+  server.respond( returnCode = 200, "text/plain");          // response to client
   server.sendLine( F( "led = "), state ? CMD_ON : CMD_OFF);
 
-  LABEL( F( "# Led = "), state) LF;                     // response to console
+  LABEL( F( "# Led = "), state) LF;                         // response to console
 }
 
 // handle on "blink" PUT commands
@@ -98,10 +99,10 @@ void handleBlink_PUT()
 {                                                           // check on path / args boundaries
   if (( server.pathCount() > 1) || ( server.argsCount() > 1)) return;
 
-  pinMode( 2, OUTPUT);                            // set LED output mode
+  pinMode( LED_DEFAULT, OUTPUT);                            // set LED output mode
 
   if ( server.arg( "state", CMD_ON )) {
-    digitalWrite( 2, LED_ON);                 // switch led on
+    digitalWrite( LED_DEFAULT, LED_ON);                     // switch led on
     server.respond( returnCode = 200, "text/plain");        // response to client
     server.sendLine( F( "led switched "), CMD_ON );
                                                             // respond to client
@@ -109,7 +110,7 @@ void handleBlink_PUT()
   }
 
   if ( server.arg( "state", CMD_OFF)) {
-    digitalWrite( 2, LED_OFF);                 // switch led off
+    digitalWrite( LED_DEFAULT, LED_OFF);                    // switch led off
     server.respond( returnCode = 200, "text/plain");        // response to client
     server.sendLine( F( "led switched "), CMD_OFF);
 
