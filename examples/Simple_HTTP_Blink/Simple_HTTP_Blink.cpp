@@ -25,7 +25,7 @@ const char ssid[] = SECRET_SSID;
 const char pass[] = SECRET_PASS;
 
 byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
-byte server_ip4[]     = { 192, 168,   1,  68 };             // lan ip (e.g. "192.168.1.60")
+byte server_ip4[]     = { 192, 168,   1,  69 };             // lan ip (e.g. "192.168.1.60")
 byte server_gateway[] = { 192, 168,   1,   1 };             // router gateway
 byte server_subnet[]  = { 255, 255, 255,   0 };             // subnet mask
 
@@ -85,8 +85,7 @@ void handleBlink_GET()
 {                                                           // check on path / args boundaries
   if (( server.pathCount() > 1) || ( server.argsCount() > 0)) return;
 
-  //pinMode( LED_BUILTIN, INPUT);                             // set LED input mode
-  bool state = digitalRead( LED_BUILTIN);
+  bool state = digitalRead( 2);
 
   server.respond( returnCode = 200, "text/plain");        // response to client
   server.sendLine( F( "led = "), state ? CMD_ON : CMD_OFF);
@@ -99,10 +98,10 @@ void handleBlink_PUT()
 {                                                           // check on path / args boundaries
   if (( server.pathCount() > 1) || ( server.argsCount() > 1)) return;
 
-  pinMode( LED_BUILTIN, OUTPUT);                            // set LED output mode
+  pinMode( 2, OUTPUT);                            // set LED output mode
 
   if ( server.arg( "state", CMD_ON )) {
-    digitalWrite( LED_BUILTIN, LED_ON);                 // switch led on
+    digitalWrite( 2, LED_ON);                 // switch led on
     server.respond( returnCode = 200, "text/plain");        // response to client
     server.sendLine( F( "led switched "), CMD_ON );
                                                             // respond to client
@@ -110,7 +109,7 @@ void handleBlink_PUT()
   }
 
   if ( server.arg( "state", CMD_OFF)) {
-    digitalWrite( LED_BUILTIN, LED_OFF);                 // switch led off
+    digitalWrite( 2, LED_OFF);                 // switch led off
     server.respond( returnCode = 200, "text/plain");        // response to client
     server.sendLine( F( "led switched "), CMD_OFF);
 
