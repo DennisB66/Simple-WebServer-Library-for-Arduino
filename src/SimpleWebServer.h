@@ -63,7 +63,7 @@ public:
   void sendContent(  const char*);                          // send response (content)
   void sendLine( const char* = NULL, const char* = NULL);   // send response (content) + LF
   void sendLine( const __FlashStringHelper*, const char* = NULL);
-//void sendLine();                                          // send response (LF)
+
 
   word        port();                                       // return port number
   char*       request();                                    // return HTTP request
