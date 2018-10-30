@@ -29,12 +29,12 @@
 #define SERVER_NAME "NetRelay-01"                           // host name
 #define SERVER_PORT 80                                      // host port
 
-#include "MySecrets.h"                                     // Wifi Settings (change in MySecrets.h)
+#include "MySecrets.h"                                      // Wifi Settings (change in MySecrets.h)
 const char ssid[] = SECRET_SSID;
 const char pass[] = SECRET_PASS;
 
-byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; // mac address
-byte server_ip4[]     = { 192, 168,   1,  68 };             // lan ip (e.g. "192.168.1.60")
+byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+byte server_ip4[]     = { 192, 168,   1,  68 };             // lan ip (e.g. "192.168.1.68")
 byte server_gateway[] = { 192, 168,   1,   1 };             // router gateway
 byte server_subnet[]  = { 255, 255, 255,   0 };             // subnet mask
 
@@ -64,7 +64,7 @@ void relay2Json ( char*, size_t, uint8_t, uint8_t);
 void setup() {
   BEGIN( 115200) LF;                                        // open serial communications
 
-  PRINT( F( "# ----------------------------")) LF;               // show header
+  PRINT( F( "# ----------------------------")) LF;          // show header
 	PRINT( F( "# -  Simple HTTP JSON Relay  -")) LF;
   PRINT( F( "# -  V0.8       (DennisB66)  -")) LF;
   PRINT( F( "# ----------------------------")) LF;
@@ -186,9 +186,7 @@ void relay2Json( char* content, size_t size, uint8_t state)
     }
   }
 
-//JsonObject& item = root.createNestedObject();             // create object
-
-  root.printTo( content, size);                             // write to char buffer                                          // success = json created
+  root.printTo( content, size);                             // write to char buffer
 }
 
 // generate JSON for relay item i

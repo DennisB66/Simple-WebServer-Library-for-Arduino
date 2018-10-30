@@ -25,7 +25,7 @@ const char ssid[] = SECRET_SSID;
 const char pass[] = SECRET_PASS;
 
 byte server_mac[]     = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEF };
-byte server_ip4[]     = { 192, 168,   1,  69 };             // lan ip (e.g. "192.168.1.60")
+byte server_ip4[]     = { 192, 168,   1,  69 };             // lan ip (e.g. "192.168.1.68")
 byte server_gateway[] = { 192, 168,   1,   1 };             // router gateway
 byte server_subnet[]  = { 255, 255, 255,   0 };             // subnet mask
 
