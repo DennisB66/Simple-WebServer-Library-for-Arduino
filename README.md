@@ -33,4 +33,5 @@ arg()		        // return value of a specific argument (by index or label) of HTT
 Version history:
 ```
 0.7			// improved design & coding
+0.8			// various enhancements
 ```
