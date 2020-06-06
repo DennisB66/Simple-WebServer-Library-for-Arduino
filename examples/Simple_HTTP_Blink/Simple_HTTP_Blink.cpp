@@ -12,7 +12,7 @@
 // curl -i -X GET "http://192.168.1.68"                        -> return HTTP identify
 // curl -i -X GET "http://192.168.1.68/blink"                  -> show blinking status
 // curl -i -X PUT "http://192.168.1.68/blink?state=on"         -> switch blinking on
-// curl -i -X PUT "http://192.168.1.68/blink?state=off"        -> switch blinking off
+//          -> switch blinking off
 
 #include "SimpleWebServer.h"
 #include "SimpleUtils.h"
@@ -29,7 +29,7 @@ byte server_ip4[]     = { 192, 168,   1,  69 };             // lan ip (e.g. "192
 byte server_gateway[] = { 192, 168,   1,   1 };             // router gateway
 byte server_subnet[]  = { 255, 255, 255,   0 };             // subnet mask
 
-SimpleWebServer server( SERVER_PORT);                       // ardiuno  server
+SimpleWebServer server( SERVER_NAME, SERVER_PORT);          // web server instance
 
 #define LED_DEFAULT 2
 #define LED_ON      1                                       // value to switch led on
@@ -44,7 +44,7 @@ void handleBlink_GET();                                     // callback for API 
 void handleBlink_PUT();                                     // callback for API PUT handling
 
 void setup() {
-  BEGIN( 115200) LF;                                        // activate Serial out
+  BEGIN( 9600) LF;                                        // activate Serial out
 
   PRINT( F( "# -----------------------")) LF;               // show header
   PRINT( F( "# -  Simple HTTP Blink  -")) LF;
