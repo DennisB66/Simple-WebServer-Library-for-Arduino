@@ -9,22 +9,22 @@ The primary goal was to create a Arduino sketch that can switch a number of rela
 The functions in the class SimpleWebServer include:
 
 ```
-begin()			    // start server session
-connect()		    // open connection (incoming HTTP request from client)
-disconnect()		// close connection (with client)
-handleOn()		    // attach callback function
+begin()             // start server session
+connect()           // open connection (incoming HTTP request from client)
+disconnect()        // close connection (with client)
+handleOn()          // attach callback function
 handleRequest()     // route incoming requests to the proper callback
-handle()		    // route HTTP request to proper callback function
-respond()	        // send response (to client)
-sendContent()		// send response (content)
-sendLine()		    // send response (content) + LF
-port			    // return active port number
-request()		    // return pending HTTP request
-method()	        // return pending HTTP method
-pathCount()	        // return number of (recognized) arguments
+handle()            // route HTTP request to proper callback function
+respond()           // send response (to client)
+sendContent()       // send response (content)
+sendLine()          // send response (content) + LF
+port()              // return active port number
+request()           // return pending HTTP request
+method()            // return pending HTTP method
+pathCount()         // return number of (recognized) arguments
 path()              // return a specific path item of HTTP request
 argCount()          // return number of (recognized) arguments of HTTP request
-arg()		        // return value of a specific argument (by index or label) of HTTP request
+arg()               // return value of a specific argument (by index or label) of HTTP request
 ```
 
 ## Library Dependencies
@@ -36,8 +36,8 @@ arg()		        // return value of a specific argument (by index or label) of HTT
 Version history:
 
 ```
-0.7			    // improved design & coding
-0.8			    // various enhancements
+0.7             // improved design & coding
+0.8             // various enhancements
 0.81            // bugfix with scheduler dependency
 ```
 
