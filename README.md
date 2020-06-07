@@ -7,6 +7,7 @@ The primary goal was to create a Arduino sketch that can switch a number of rela
 ## Functionality
 
 The functions in the class SimpleWebServer include:
+
 ```
 begin()			    // start server session
 connect()		    // open connection (incoming HTTP request from client)
@@ -33,6 +34,7 @@ arg()		        // return value of a specific argument (by index or label) of HTT
 - https://github.com/bblanchon/ArduinoJson (example only)
 
 Version history:
+
 ```
 0.7			        // improved design & coding
 0.8			        // various enhancements
