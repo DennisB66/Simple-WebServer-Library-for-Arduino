@@ -35,4 +35,5 @@ Version history:
 ```
 0.7			// improved design & coding
 0.8			// various enhancements
+0.81        // bugfix with scheduler dependency
 ```
