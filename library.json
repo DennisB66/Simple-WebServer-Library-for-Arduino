@@ -18,5 +18,18 @@
   ],
   "version": "0.81",
   "frameworks": "arduino",
-  "platforms": "*"
+  "platforms": "*",
+  "dependencies":
+  [
+    {
+      "owner": "dennisb66",
+      "name": "Simple-Utility-Library-for-Arduino",
+      "version": "^0.4"
+    },
+    {
+      "owner": "dennisb66",
+      "name": "Simple-Scheduler-Library-for-Arduino",
+      "version": "^0.1"
+    }
+  ]
 }
